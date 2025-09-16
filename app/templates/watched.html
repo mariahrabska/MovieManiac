@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Watched Movies{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="container">
+        <h2><i class="fas fa-eye"></i> Your Watched Movies:</h2>
+
+        <div class="search-form">
+
+            <!-- Genre Filter -->
+            {% if genres %}
+            <label for="genre-filter">Filter by Genre:</label>
+            <div class="autocomplete-wrapper">
+                <select id="genre-filter">
+                    <option value="all">All</option>
+                    {% for genre in genres %}
+                        <option value="{{ genre }}">{{ genre }}</option>
+                    {% endfor %}
+                </select>
+                <!-- tu w przyszłości możesz dodać sugestie -->
+            </div>
+            {% endif %}
+
+            <!-- Sorting -->
+            <label for="sort-by">Sort by:</label>
+            <div class="autocomplete-wrapper">
+                <select id="sort-by">
+                    <option value="title-asc">Title A → Z</option>
+                    <option value="title-desc">Title Z → A</option>
+                    <option value="year-asc">Year Ascending</option>
+                    <option value="year-desc">Year Descending</option>
+                </select>
+            </div>
+
+        </div>
+
+        {% if watchlist %}
+            <ul class="movie-list">
+                {% for movie in watchlist %}
+                    <li class="movie-item" data-genres="{{ movie.genres }}" data-year="{{ movie.release_year }}">
+                        <div class="movie-info">
+                            <a href="{{ url_for('main.movie_page', movie_id=movie['movie_id']) }}">
+                                {% if movie.poster_path %}
+                                    <img src="https://image.tmdb.org/t/p/w92{{ movie.poster_path }}" 
+                                         alt="{{ movie.title }}" class="poster-thumb">
+                                {% endif %}
+                                <span class="movie-title">{{ movie.title }}</span>
+                            </a>
+                        </div>
+
+                        <div class="movie-actions">
+                            <button class="remove-btn" data-id="{{ movie['movie_id'] }}" title="Remove from watched">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>You don't have any watched movies yet.</p>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+// Remove movies from watched
+document.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const movie_id = btn.dataset.id;
+        fetch('/watched/remove', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({movie_id: movie_id})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                btn.closest('li').remove();
+            } else {
+                alert("❌ " + (data.error || "Failed to remove movie from watched."));
+            }
+        });
+    });
+});
+
+// Genre filtering
+const genreFilter = document.getElementById('genre-filter');
+if (genreFilter) {
+    genreFilter.addEventListener('change', () => {
+        const selected = genreFilter.value;
+        document.querySelectorAll('.movie-item').forEach(item => {
+            const movieGenres = item.dataset.genres.split('|');
+            item.style.display = (selected === 'all' || movieGenres.includes(selected)) ? '' : 'none';
+        });
+    });
+}
+
+// Sorting
+const sortSelect = document.getElementById('sort-by');
+if (sortSelect) {
+    sortSelect.addEventListener('change', () => {
+        const ul = document.querySelector('.movie-list');
+        const items = Array.from(ul.querySelectorAll('.movie-item'));
+
+        const sortValue = sortSelect.value;
+        items.sort((a, b) => {
+            if (sortValue.startsWith('title')) {
+                const titleA = a.querySelector('.movie-title').textContent.toLowerCase();
+                const titleB = b.querySelector('.movie-title').textContent.toLowerCase();
+                return sortValue === 'title-asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+            } else if (sortValue.startsWith('year')) {
+                const yearA = parseInt(a.dataset.year) || 0;
+                const yearB = parseInt(b.dataset.year) || 0;
+                return sortValue === 'year-asc' ? yearA - yearB : yearB - yearA;
+            }
+        });
+
+        items.forEach(item => ul.appendChild(item));
+    });
+}
+</script>
+{% endblock %}

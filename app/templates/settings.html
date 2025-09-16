@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}⚙️Account Settings{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="container">
+        <h2><i class="fas fa-cogs"></i> Account Settings</h2>
+
+        <!-- Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+        <br>
+
+        <!-- Settings Form -->
+        <form method="POST" action="{{ url_for('main.settings') }}" class="settings-form">
+            <label for="username"><i class="fas fa-user"></i> Username</label>
+            <input type="text" id="username" name="username" value="{{ username }}" required>
+
+            <label for="password"><i class="fas fa-lock"></i> New Password</label>
+            <div class="password-wrapper">
+                <input type="password" id="password" name="password" placeholder="••••••••">
+                <button type="button" id="togglePassword" class="toggle-password">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
+
+            <button type="submit" class="btn-save"><i class="fas fa-save"></i> Save Changes</button>
+        </form>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='sidebar.js') }}"></script>
+
+<script>
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('password');
+
+togglePassword.addEventListener('click', () => {
+    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+    passwordInput.setAttribute('type', type);
+    togglePassword.innerHTML = type === 'password'
+        ? '<i class="fas fa-eye"></i>'
+        : '<i class="fas fa-eye-slash"></i>';
+});
+
+// --- Walidacja formularza ustawień ---
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.settings-form');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        let messages = [];
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+
+        // Walidacja username
+        if (!username) {
+            valid = false;
+            messages.push("Username cannot be blank");
+        }
+
+        // Walidacja hasła (jeśli podano)
+        if (password && password.length < 8) {
+            valid = false;
+            messages.push("Hasło musi mieć co najmniej 8 znaków.");
+        }
+
+        // Wyświetlanie błędów
+        let flashContainer = document.querySelector('.flashes');
+        if (!flashContainer) {
+            flashContainer = document.createElement('ul');
+            flashContainer.className = 'flashes';
+            form.parentNode.insertBefore(flashContainer, form);
+        }
+        flashContainer.innerHTML = '';
+        messages.forEach(msg => {
+            const li = document.createElement('li');
+            li.className = 'error';
+            li.textContent = msg;
+            flashContainer.appendChild(li);
+        });
+
+        if (!valid) e.preventDefault(); // zablokuj submit jeśli są błędy
+    });
+});
+</script>
+
+{% endblock %}

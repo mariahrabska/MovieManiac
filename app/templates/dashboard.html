@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}🎬 Find recommendations{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+            {% for category, message in messages %}
+                <li class="{{ category }}">{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+
+<div class="recommendation-container">
+    <div class="container">
+        <h2>Select a movie to get recommendations:</h2>
+        <form id="recommendForm" action="{{ url_for('main.recommend') }}" method="POST">
+            <input type="text" id="movie_title_input" name="movie" placeholder="Type a movie title..." list="movie_titles" autocomplete="off" required>
+            <datalist id="movie_titles"></datalist>
+            <div id="movie_error" class="error-message" style="display:none;"></div>
+            <button type="submit" class="btn btn-primary">Show Recommendations</button>
+        </form>
+    </div>
+</div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const movieInput = document.getElementById('movie_title_input');
+    const movieDatalist = document.getElementById('movie_titles');
+    const errorDiv = document.getElementById('movie_error');
+    const form = document.getElementById('recommendForm');
+    let allTitles = [];
+
+    // Fetch all movie titles from backend
+    fetch('/get_movie_titles')
+        .then(res => res.json())
+        .then(data => {
+            allTitles = data.map(item => typeof item === 'object' ? item.title : item);
+            console.log(`Loaded ${allTitles.length} movie titles.`);
+        })
+        .catch(err => console.error('Error fetching titles:', err));
+
+    // Filter suggestions as user types
+    movieInput.addEventListener('input', function() {
+        const val = this.value.toLowerCase().trim();
+        movieDatalist.innerHTML = '';
+
+        if (val.length === 0) return;
+
+        allTitles
+            .filter(title => title.toLowerCase().startsWith(val))
+            .slice(0, 10)
+            .forEach(title => {
+                const option = document.createElement('option');
+                option.value = title;
+                movieDatalist.appendChild(option);
+            });
+    });
+
+    function normalizeTitleClient(title) {
+        if (!title) return '';
+        const noYear = title.replace(/\(\d{4}\)/g, '');
+        return noYear.replace(/\s+/g, ' ').trim();
+    }
+
+    form.addEventListener('submit', function(e) {
+        let inputVal = movieInput.value.trim();
+        if (!allTitles.includes(inputVal)) {
+            e.preventDefault();
+            errorDiv.textContent = '❌ Please select a movie from the suggestions list to get recommendations.';
+            errorDiv.style.display = 'block';
+            movieInput.focus();
+        } else {
+            errorDiv.style.display = 'none';
+            movieInput.value = normalizeTitleClient(inputVal); // Send title without year
+        }
+    });
+});
+</script>
+{% endblock %}

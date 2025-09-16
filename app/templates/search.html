@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}🔍Movie Search{% endblock %}
+
+{% block content %}
+<div class="main-content">
+  <div class="container">
+    <h2><i class="fas fa-search"></i> Movie Search</h2>
+
+    <form method="POST" action="{{ url_for('main.search') }}" id="searchForm" class="search-form">
+      
+      <!-- Title -->
+      <label for="title">Title:</label>
+      <div class="autocomplete-wrapper">
+        <input type="text" name="title" id="title" value="{{ title }}" placeholder="Enter title..." autocomplete="off">
+        <ul id="title-suggestions" class="suggestions-list"></ul>
+      </div>
+
+      <!-- Genre -->
+      <label for="genre">Genre:</label>
+      <div class="autocomplete-wrapper">
+        <input type="text" name="genre" id="genre-input" value="{{ genre }}" placeholder="Enter genre..." autocomplete="off">
+        <ul id="genre-suggestions" class="suggestions-list"></ul>
+      </div>
+
+      <!-- Year -->
+      <label for="year">Year:</label>
+      <input type="number" name="year" id="year" value="{{ year }}" min="1900" max="2099">
+
+      <!-- Keywords -->
+      <label for="keywords">Keywords:</label>
+      <div class="autocomplete-wrapper">
+        <input type="text" name="keywords" id="keywords" value="{{ keywords }}" placeholder="Enter keyword..." autocomplete="off">
+        <ul id="keyword-suggestions" class="suggestions-list"></ul>
+      </div>
+
+      <button type="submit">Search</button>
+    </form>
+
+{% if results %}
+    <h3>Search Results:</h3>
+    <ul class="movie-list">
+      {% for movie in results %}
+        <li class="movie-item"
+            data-genres="{{ movie.genres|default('') }}"
+            data-year="{{ movie.release_year }}"
+            data-keywords="{{ movie.keywords|default('') }}">
+            
+            <div class="movie-info">
+                <a href="{{ url_for('main.movie_page', movie_id=movie.movie_id) }}">
+                    {% if movie.poster_path %}
+                        <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="poster-thumb">
+                    {% endif %}
+                    <div class="movie-text">
+                        <span class="movie-title">{{ movie.title }}</span>
+                        {% if movie.overview %}
+                            <p class="movie-description">{{ movie.overview }}</p>
+                        {% endif %}
+                        {% if movie.rating %}
+                            <p class="movie-rating">⭐ {{ movie.rating }}/10</p>
+                        {% endif %}
+                    </div>
+                </a>
+            </div>
+            
+        </li>
+      {% endfor %}
+    </ul>
+{% elif results is not none %}
+    <p>No results found for the given criteria.</p>
+{% endif %}
+
+  </div>
+</div>
+
+<script>
+// ===============================
+// Autocomplete helper function
+// ===============================
+function setupAutocomplete(inputId, suggestionBoxId, fetchUrl) {
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(suggestionBoxId);
+    let allItems = [];
+    let selectedIndex = -1;
+
+    fetch(fetchUrl)
+      .then(res => res.json())
+      .then(data => { 
+            if(inputId === 'title') {
+                allItems = data.map(x => x.title.trim());
+            } else {
+                allItems = data.map(x => x.trim());
+            }
+        });
+
+    input.addEventListener('input', () => {
+        const q = input.value.toLowerCase();
+        box.innerHTML = '';
+        selectedIndex = -1;
+        if (!q) return;
+        const filtered = allItems.filter(x => x.toLowerCase().startsWith(q)).slice(0,5);
+        filtered.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'suggestion-item';
+            li.textContent = item;
+            li.addEventListener('click', () => { input.value = item; box.innerHTML = ''; });
+            box.appendChild(li);
+        });
+    });
+
+    input.addEventListener('keydown', e => {
+        const items = box.querySelectorAll('.suggestion-item');
+        if (!items.length) return;
+        if (e.key === 'ArrowDown') { e.preventDefault(); selectedIndex = (selectedIndex+1)%items.length; setActive(items); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); selectedIndex = (selectedIndex-1+items.length)%items.length; setActive(items); }
+        else if (e.key === 'Enter') { if(selectedIndex>=0){ e.preventDefault(); input.value = items[selectedIndex].textContent; box.innerHTML=''; } }
+    });
+
+    function setActive(items){
+        items.forEach((el,i)=>el.classList.toggle('active', i===selectedIndex));
+    }
+
+    document.addEventListener('click', e => {
+        if(!input.contains(e.target) && !box.contains(e.target)) box.innerHTML='';
+    });
+}
+
+// Setup autocompletes
+setupAutocomplete('title', 'title-suggestions', '/get_movie_titles');
+setupAutocomplete('genre-input', 'genre-suggestions', '/all_genres');
+setupAutocomplete('keywords', 'keyword-suggestions', '/all_keywords');
+</script>
+{% endblock %}

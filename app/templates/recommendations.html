@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Your Recommendations{% endblock %}
+
+{% block content %}
+<div class="main-content" id="mainContent">
+    <div class="container">
+        <div id="movieBeingRecommended" data-movie-title="{{ movie.title if movie else '' }}"></div>
+
+        {% if movie %}
+            <div class="selected-movie">
+                {% if movie.poster_path %}
+                    <img src="{{ movie.poster_path }}" alt="{{ movie.title }}" class="selected-movie-poster">
+                {% endif %}
+                <h2 class="selected-movie-title">{{ movie.title }}</h2>
+                {% if movie.overview %}
+                    <p class="selected-movie-description">{{ movie.overview }}</p>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Recommendations list -->
+        <ul id="recommendationsList" class="recommendations-list">
+        {% for rec in recommendations %}
+            <li>
+                <div class="movie-item-content" data-movie-id="{{ rec.id }}">
+                    {% if rec.poster_path %}
+                        <img src="{{ rec.poster_path }}" alt="{{ rec.title }}" class="poster-thumb">
+                    {% endif %}
+                    <div class="movie-info">
+                        <span class="movie-title">{{ rec.title }}</span>
+                        <p class="movie-description">{{ rec.overview or "No description available" }}</p>
+                    </div>
+
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="watchlist-checkbox" 
+                            data-movie-id="{{ rec.id }}"
+                            {% if rec.id in watchlist_ids %}checked{% endif %}>
+                        <span class="custom-checkbox"><i class="fas fa-check"></i></span>
+                        Watchlist
+                    </label>
+
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="watched-checkbox" 
+                            data-movie-id="{{ rec.id }}"
+                            {% if rec.id in watched_ids %}checked{% endif %}>
+                        <span class="custom-checkbox"><i class="fas fa-check"></i></span>
+                        Watched
+                    </label>
+
+                    <label class="checkbox-container">
+                        <input type="checkbox" class="favorite-checkbox" 
+                            data-movie-id="{{ rec.id }}"
+                            {% if rec.id in favorite_ids %}checked{% endif %}>
+                        <span class="custom-checkbox"><i class="fas fa-heart"></i></span>
+                        Favorite
+                    </label>
+                </div>
+            </li>
+        {% endfor %}
+        </ul>
+
+        <!-- Pagination controls -->
+        <div class="pagination-controls">
+            <button id="prevPageBtn" class="pagination-btn" disabled>&laquo; Previous</button>
+            <span id="currentPageIndicator">1</span>
+            <button id="nextPageBtn" class="pagination-btn">Next &raquo;</button>
+        </div>
+    </div>
+</div>
+
+<div id="notification" class="notification"></div>
+
+<!-- Movie Modal -->
+<div id="movieModal" class="modal">
+  <div class="modal-content">
+    <span class="close-modal">&times;</span>
+    <div id="modalBody">
+      <!-- Poster and info rendered by JS -->
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='sidebar.js') }}?v=3"></script>
+<script src="{{ url_for('static', filename='recommendations.js') }}?v=3"></script>
+{% endblock %}

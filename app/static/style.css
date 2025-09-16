@@ -1,0 +1,1274 @@
+
+
+        /* General styles & Dark Theme */
+        :root {
+            --dark-bg: #1a1a1a;
+            --dark-card: #2c2c2c;
+            --dark-text: #e0e0e0;
+            --dark-text-light: #b0b0b0;
+            --accent-color: #e50914; /* Netflix red-like */
+            --accent-hover: #c10811;
+            --border-color: #444;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark-bg);
+            color: var(--dark-text);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll when sidebar opens */
+        }
+
+        /* --- Header --- */
+        header {
+            background-color: var(--dark-card);
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000; /* Ensure header is on top */
+            width: 100%;
+            box-sizing: border-box;
+            
+        }
+        /* Usunięcie podkreślenia dla logo */
+header .logo {
+    text-decoration: none;       /* opcjonalnie */
+}
+
+        .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            
+        }
+
+        .logo i {
+            margin-right: 10px;
+            color: var(--dark-text);
+        }
+
+        .logo:hover{
+            color: var(--accent-hover);
+            text-decoration: none;
+        }
+
+        .menu-toggle {
+            background: none;
+            border: none;
+            color: var(--dark-text);
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .menu-toggle:hover {
+            color: var(--accent-color);
+        }
+
+        /* --- Sidebar Menu --- */
+        .sidebar {
+            height: 100%;
+            width: 0; /* Hidden by default */
+            position: fixed;
+            z-index: 1001; /* Above header */
+            top: 0;
+            right: 0; /* Starts from the right */
+            background-color: var(--dark-card);
+            overflow-x: hidden;
+            transition: 0.5s; /* Smooth opening/closing */
+            padding-top: 60px;
+            box-shadow: -5px 0 15px var(--shadow-color);
+        }
+
+        .sidebar.open {
+            width: 280px; /* Width when open */
+        }
+
+        .sidebar a {
+            padding: 15px 25px;
+            text-decoration: none;
+            font-size: 1.3em;
+            color: var(--dark-text-light);
+            display: block;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar a i {
+            margin-right: 15px;
+            font-size: 1.1em;
+        }
+
+        .sidebar a:hover {
+            color: var(--dark-text);
+            background-color: #3a3a3a;
+        }
+
+        .sidebar .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 25px;
+            font-size: 2.5em;
+            text-decoration: none;
+            color: var(--dark-text-light);
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .sidebar .close-btn:hover {
+            color: var(--accent-color);
+        }
+
+        /* --- Main Content Area --- */
+        .main-content {
+            flex-grow: 1; /* Take remaining space */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 20px;
+            transition: margin-right 0.5s; /* For pushing content when sidebar opens */
+        }
+        
+        /* Push content when sidebar is open */
+        body.sidebar-open .main-content {
+            margin-right: 280px; /* Same width as sidebar */
+        }
+
+        /* Card container for the form */
+        .container {
+            background-color: var(--dark-card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px var(--shadow-color);
+            text-align: center;
+            max-width: 900px;
+            width: 100%; /* Changed from 90% to 100% max-width applies */
+            box-sizing: border-box; /* Ensures padding doesn't push width over */
+        }
+
+        h1 {
+            color: var(--dark-text);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: normal; /* Less bold for modern look */
+        }
+
+        h1::before {
+            content: '🍿'; /* Popcorn emoji */
+            margin-right: 10px;
+            font-size: 1.2em;
+        }
+
+        /* Form styling */
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: stretch;
+        }
+
+        label {
+            font-size: 1.1em;
+            color: var(--dark-text-light);
+            margin-bottom: 5px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        /* Input and Datalist styling */
+        /*input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1em;
+            background-color: #3a3a3a; 
+            color: var(--dark-text);
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }*/
+
+        input[type="text"]:focus, input[type="password"]:focus{
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(229, 9, 20, 0.25); /* Accent color shadow */
+            outline: none;
+        }
+
+        /* Added style for invalid input */
+        input[type="text"].invalid {
+            border-color: #dc3545; /* Red border for invalid input */
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.25);
+        }
+
+        /* Button styling */
+        button[type="submit"] {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+            margin-left: 20%;
+            margin-right: 20%;
+            letter-spacing: 0.5px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+        }
+
+        button[type="submit"]:active {
+            transform: translateY(0);
+        }
+
+        /* Message for invalid input */
+        .error-message {
+            color: #dc3545;
+            font-size: 0.9em;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+        .error-message.show {
+            display: block; /* Show when needed */
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: var(--dark-card);
+            color: var(--dark-text-light);
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9em;
+            box-shadow: 0 -2px 10px var(--shadow-color);
+            margin-top: auto; /* Pushes footer to the bottom */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* --- Responsive adjustments --- */
+        @media (max-width: 768px) {
+            .sidebar.open {
+                width: 250px;
+            }
+            body.sidebar-open .main-content {
+                margin-right: 250px;
+            }
+            header {
+                padding: 10px 20px;
+            }
+            .logo {
+                font-size: 1.5em;
+            }
+            .menu-toggle {
+                font-size: 1.5em;
+            }
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            input[type="text"], button[type="submit"] {
+                font-size: 1em;
+                padding: 10px 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar.open {
+                width: 100%; /* Full width on very small screens */
+                right: 0;
+                box-shadow: none;
+            }
+            body.sidebar-open .main-content {
+                margin-right: 0; /* No push, sidebar covers content */
+            }
+            .container {
+                padding: 20px 15px;
+            }
+        }
+
+
+        
+        @keyframes fadeInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .new-recommendation {
+            animation: fadeInFromBottom 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeOutToTop {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+
+        .watched-out {
+            animation: fadeOutToTop 0.3s ease-in forwards;
+        }
+/* ... i tak dalej, wszystkie style z tagu <style> */
+
+/* --- Lista rekomendacji --- */
+ul#recommendationsList {
+    list-style: none;
+    padding: 0;
+    margin: 30px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+}
+
+/* Każdy element listy (film) */
+#recommendationsList li {
+    background-color: #2c2c2c;
+    padding: 15px 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#recommendationsList li:hover {
+    background-color: #333;
+    transform: translateY(-2px);
+}
+
+/* Usuwa domyślne kropki z listy */
+.no-bullets {
+    list-style: none;
+    padding-left: 0;
+    margin-left: 0;
+}
+
+/* Opcjonalnie: odrobina odstępu między elementami */
+.recommendations-list li {
+    margin-bottom: 15px;
+}
+
+
+/* Tytuł filmu */
+.movie-title {
+    font-size: 1.1em;
+    font-weight: 500;
+    color: var(--dark-text);
+    flex: 1;
+    text-align: left;
+}
+
+/* Stylowanie checkboxa i jego kontenera */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+}
+
+.checkbox-container input[type="checkbox"] {
+    opacity: 0;
+    position: absolute;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.custom-checkbox {
+    width: 22px;
+    height: 22px;
+    background-color: #444;
+    border-radius: 5px;
+    display: inline-block;
+    transition: background-color 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.custom-checkbox i {
+    color: transparent;
+    font-size: 1em;
+    transition: color 0.2s;
+}
+
+input[type="checkbox"]:checked + .custom-checkbox {
+    background-color: var(--accent-color);
+}
+
+input[type="checkbox"]:checked + .custom-checkbox i {
+    color: white;
+}
+
+.added-to-watchlist {
+    background-color: #e0ffe0;
+    transition: background-color 0.3s ease;
+}
+
+.added-to-watchlist .checkbox-container {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+
+
+.movie-list {
+    list-style: none;
+    padding: 0;
+    margin-top: 1.5rem;
+}
+
+.movie-list li {
+    padding: 0.8rem;
+    margin-bottom: 0.6rem;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    width: 100%;
+    margin: 20px auto; /* tu najważniejsze: auto wycentruje poziomo */
+    align-items: center;
+}
+
+
+.settings-form label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.settings-form input {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    width: 100%;
+}
+
+.btn-save {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    transition: background 0.3s;
+}
+
+.btn-save:hover {
+    background: #2980b9;
+}
+.password-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.password-wrapper input {
+    width: 100%;
+    padding-right: 40px; /* miejsce na ikonę */
+    box-sizing: border-box;
+    height: 40px; /* dopilnuj, żeby wysokość była stała */
+    line-height: 40px;
+}
+
+.password-wrapper .toggle-password {
+    position: absolute;
+    right: 10px;
+    top: 45%;
+    transform: translateY(-50%); /* centrowanie pionowe */
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px; /* dopasuj wielkość ikony */
+    color: var(--dark-text-light);
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+
+.password-wrapper .toggle-password:hover {
+    color: var(--accent-color);
+}
+
+
+.poster-thumb {
+    width: 80px;       /* szerokość miniatury */
+    height: 120px;     /* wysokość miniatury */
+    object-fit: cover; /* przytnie obraz zachowując proporcje */
+    border-radius: 6px;
+    margin-right: 15px;
+    flex-shrink: 0;    /* zapobiega kurczeniu się obrazka */
+}
+
+.movie-item-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.movie-info {
+    flex: 1;           /* zajmuje resztę miejsca obok obrazka */
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+
+}
+
+
+.movie-description {
+    font-size: 0.9em;
+    color: var(--dark-text-light);
+    margin-top: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* maks 3 linie */
+    -webkit-box-orient: vertical;
+}
+
+
+/* --- Sekcja wybranego filmu --- */
+.selected-movie-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px; /* odstęp między obrazkiem a opisem */
+    margin-bottom: 30px;
+    background-color: #2c2c2c; /* tło sekcji */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.selected-movie-poster {
+    width: 200px; /* szerokość plakatu */
+    border-radius: 10px;
+    flex-shrink: 0; /* nie zmniejsza się */
+}
+
+.selected-movie-title {
+    font-size: 1.8em;
+    color: var(--accent-color);
+    margin: 0 0 10px 0;
+}
+
+.selected-movie-description {
+    font-size: 1em;
+    color: var(--dark-text-light);
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Responsywność: na małych ekranach poster nad opisem */
+@media (max-width: 768px) {
+    .selected-movie-section {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .selected-movie-poster {
+        width: 100%;
+        max-width: 300px;
+        margin-bottom: 15px;
+    }
+
+    .selected-movie-title {
+        font-size: 1.5em;
+    }
+}
+
+
+.notification {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #333;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  z-index: 9999;
+}
+.notification.show {
+  opacity: 1;
+}
+
+/* Modal - ciemne tło */
+/* --- Modal --- */
+.modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%; 
+    height: 100%; 
+    overflow: auto; 
+    background-color: rgba(0, 0, 0, 0.85); /* ciemne tło */
+}
+
+/* Modal content - większe okno */
+.modal-content {
+    background-color: #1e1e1e;
+    color: #fff;
+    margin: 3% auto; 
+    padding: 20px;
+    border-radius: 12px;
+    width: 80%; 
+    max-width: 900px;
+    position: relative;
+    display: flex;        /* poziomy układ */
+    flex-direction: row;  /* poster po lewej, info po prawej */
+    gap: 20px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+}
+
+/* Zamknięcie */
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.close-modal:hover {
+    color: #ff6b6b;
+}
+
+/* Poster po lewej */
+.modal-poster {
+    max-width: 200px;  /* mały poster */
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    flex-shrink: 0;    /* nie kurczy się */
+}
+
+/* Główna sekcja z opisem po prawej */
+.modal-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 1; /* zajmuje resztę miejsca */
+    gap: 10px;
+}
+
+/* Tytuł filmu */
+.modal-info h2 {
+    font-size: 1.5rem;
+    margin: 0;
+    color: #fff;
+}
+
+/* Opis filmu */
+.modal-info p {
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #ddd;
+    margin: 0;
+}
+
+/* Dodatkowe informacje (gatunki, produkcja, ocena) */
+.modal-info .additional-info {
+    font-size: 0.9rem;
+    color: #ccc;
+    margin-top: 10px;
+}
+
+/* Układ tekstu w modal-body */
+#modalBody {
+    display: flex;
+    flex-direction: row; /* poster po lewej, info po prawej */
+    gap: 20px;
+    flex-wrap: wrap;     /* na mniejszych ekranach poster może zejść pod info */
+    width: 100%;
+}
+
+
+    .movies-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .movie-card {
+        background: #1e1e1e;
+        border-radius: 12px;
+        overflow: hidden;
+        text-align: center;
+        padding: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease;
+    }
+
+    .movie-card:hover {
+        transform: scale(1.05);
+    }
+
+    .movie-poster {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .poster-placeholder {
+        width: 100%;
+        height: 270px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #333;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 2em;
+        color: #aaa;
+    }
+
+    .movie-info h3 {
+        font-size: 1rem;
+        margin: 8px 0 4px;
+        color: #fff;
+    }
+
+    .rating {
+        color: #f5c518;
+        font-weight: bold;
+    }
+
+
+    .ranking-list {
+    list-style: none;
+    padding: 0;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    background-color: #1e1e1e;
+    padding: 10px;
+    border-radius: 8px;
+}
+
+.poster-thumb {
+    width: 100px;
+    height: auto;
+    margin-right: 15px;
+    border-radius: 5px;
+}
+
+.movie-info {
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+}
+
+.movie-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.vote-average {
+    margin-top: 5px;
+    color: #f5c518; /* złoty kolor gwiazdek */
+}
+
+
+.movie-details .movie-header {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.movie-details .poster-thumb {
+    width: 200px;
+    border-radius: 8px;
+}
+
+.movie-main-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    color: #fff;
+}
+
+.movie-additional-info ul {
+    list-style: none;
+    padding: 0;
+    color: #ccc;
+}
+
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 15px 0;
+    gap: 10px;
+}
+
+.pagination-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+
+.favorite-btn {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    transition: color 0.2s;
+}
+
+.favorite-btn.favorited {
+    color: #e74c3c; /* czerwone serce dla ulubionych */
+    font-weight: bold;
+}
+
+.favorite-btn.favorited i {
+    transform: scale(1.2);
+}
+
+/* Wspólny styl przycisków akcji w liście filmów */
+.movie-item button {
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    margin-left: 8px;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+/* Hover */
+.movie-item button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Kliknięcie */
+.movie-item button:active {
+    transform: scale(0.9);
+}
+
+
+/* Usuń - czerwony przy hover */
+.remove-btn:hover {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+/* Obejrzane - zielony przy hover */
+.watched-btn:hover {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+}
+
+/* Wszystkie ikony lekko większe */
+.movie-item button i {
+    pointer-events: none; /* żeby klik był na cały przycisk, nie na ikonę */
+}
+/* Kontener li */
+/* Reset stylu linków w li */
+.movie-item a {
+    text-decoration: none;   /* usuwa podkreślenie */
+    color: inherit;          /* używa koloru tekstu z li */
+    background: none;        /* usuwa tło linku */
+    display: flex;           /* pozwala wyrównać poster + tytuł */
+    align-items: center;
+    width: 100%;
+    padding: 0;    
+    
+        outline: none;           /* usuwa focus outline */
+    -webkit-tap-highlight-color: transparent; /* usuwa highlight w Safari/Chrome na mobile */
+    user-select: none; /* usuwa domyślne padding linku */
+}
+
+/* Usuń niebieskie zaznaczenie przy kliknięciu */
+.movie-item a:focus,
+.movie-item a:active,
+.movie-item a:hover {
+    outline: none;          /* usuwa niebieski pasek focus */
+    background: none;       /* usuwa tło przy kliknięciu */
+}
+
+/* Ustawienie tła całego elementu li */
+.movie-item {
+    background-color: #5c5959;  /* delikatny szary, możesz zmienić */
+    border-radius: 6px;
+    padding: 6px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Opcjonalnie efekt hover */
+.movie-item:hover {
+    background-color: #6f6c6c;
+}
+
+
+.movie-info {
+    flex: 1; /* zajmuje całą dostępną szerokość po lewej */
+}
+
+.movie-info a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+}
+
+.movie-actions {
+    display: flex;
+    gap: 8px; /* odstęp między ikonami */
+}
+
+.movie-actions button {
+    width: 36px; /* stała szerokość przycisków */
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+
+/* Przykładowe kolory i efekty hover */
+.remove-btn { background-color: #f5f5f5; color: #e74c3c; }
+.remove-btn:hover { background-color: #e74c3c; color: white; }
+
+.watched-btn { background-color: #f5f5f5; color: #3498db; }
+.watched-btn:hover { background-color: #3498db; color: white; }
+
+.movie-actions button.active {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.movie-actions button:hover {
+    background-color: #ddd;
+}
+
+/* =====================
+   Select i inputy
+===================== */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+select {
+    appearance: none;           
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 8px;         
+    padding: 8px 12px;
+    margin: 5px 0 15px;
+    font-size: 14px;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    width: 100%;                
+    box-sizing: border-box;  
+
+}
+
+/* hover i focus dla select i input */
+input[type="text"]:hover,
+input[type="number"]:hover,
+input[type="password"]:hover,
+select:hover {
+    border-color: #888;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="password"]:hover,
+select:focus {
+    outline: none;
+    border-color: #bd2a2a;
+    box-shadow: 0 0 8px rgba(70, 4, 6, 0.4);
+}
+
+
+
+/* =====================
+   Opcje select
+===================== */
+select option {
+    padding: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: #333;
+}
+
+select option:checked {
+    background: #bd2a2a;
+    color: #fff;
+}
+
+/* =====================
+   Lista podpowiedzi
+===================== */
+.autocomplete-wrapper {
+    position: relative; /* dzięki temu lista będzie pod inputem */
+    width: 100%;
+}
+
+.suggestions-list {
+    list-style: none;
+    margin: 0;
+    /*margin-top: 4px;     /* mały odstęp od inputa */
+    padding: 0;
+    border: 2px solid #ccc;
+    border-radius: 8px;                /* zaokrąglone rogi */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* delikatny cień */
+    max-height: 150px;
+    overflow-y: auto;
+    background: #fff;
+    color: #333;
+    position: absolute;
+    z-index: 1000;
+    width: 100%;                        /* dopasowane do inputa */
+}
+
+/* pojedyncza sugestia */
+.suggestion-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* hover lub aktywna */
+.suggestion-item:hover,
+.suggestion-item.active {
+    background: #bd2a2a;
+    color: #fff;
+}
+
+
+.search-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;       /* maksymalna szerokość formularza */
+    width: 100%;            /* inputy wypełniają całą szerokość formularza */
+    margin: 20px auto;      /* wycentrowanie formularza na stronie */
+    align-items: center;    /* wyśrodkowanie elementów w kolumnie */
+}
+
+.search-form label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    width: 100%;            /* label w pełnej szerokości formularza */
+    text-align: left;       /* tekst labelki po lewej wewnątrz formularza */
+}
+
+.search-form input,
+.search-form select {
+    width: 100%;            /* inputy i selecty dopasowane do max-width formularza */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+
+.watchlist-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;
+    width: 100%;
+    margin: 20px auto; /* wycentrowanie poziome */
+    align-items: center;
+}
+
+.watchlist-form label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    width: 100%;       /* label w pełnej szerokości formularza */
+    text-align: left;  /* tekst labelki po lewej */
+}
+
+.watchlist-form select,
+.watchlist-form input[type="text"] {
+    width: 100%;       /* dopasowanie do max-width formularza */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/* =======================
+   Ranking List - Dark Theme
+======================= */
+.ranking-list {
+    list-style: none;
+    padding: 0;
+}
+
+.ranking-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 20px;
+    background-color: var(--dark-card);
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.ranking-item:hover {
+    transform: translateY(-2px);
+    background-color: #333;
+}
+
+.ranking-item a {
+    display: flex;
+    text-decoration: none;
+    color: var(--dark-text);
+    width: 100%;
+}
+
+.ranking-item img.poster-thumb {
+    width: 120px;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.ranking-item .movie-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    flex: 1;
+}
+
+.ranking-item .movie-title {
+    font-weight: bold;
+    font-size: 1.2em;
+    margin-bottom: 5px;
+}
+
+.ranking-item .vote-average {
+    color: #f5c518;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.ranking-item .movie-genres {
+    font-size: 0.85em;
+    color: var(--dark-text-light);
+    margin-bottom: 5px;
+}
+
+.ranking-item .movie-description {
+    font-size: 0.9em;
+    color: var(--dark-text-light);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3; /* max 3 lines */
+    -webkit-box-orient: vertical;
+}
+.movie-info .movie-title {
+    font-weight: bold;
+    /*font-size: 1.1rem;*/
+    margin-top: 14px; /* zmniejszona przerwa zamiast domyślnej 8-10px */
+}
+.ranking-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 400px;  /* jak search-form */
+    width: 100%;
+    margin: 20px auto; /* wycentrowanie */
+    align-items: center;
+}
+
+.ranking-list {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+
+.register-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 600px;  /* jak search-form */
+    width: 100%;
+    margin: 20px auto; /* wycentrowanie */
+    align-items: center;
+}
+

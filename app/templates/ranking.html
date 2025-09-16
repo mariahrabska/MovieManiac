@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}🎬Movie Ranking{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="container">
+        <h2><i class="fas fa-star"></i> Top Movies</h2>
+        {% if top_movies %}
+            <ul class="ranking-list">
+            {% for movie in top_movies %}
+                <li class="ranking-item">
+                    <a href="{{ url_for('main.movie_page', movie_id=movie['id']) }}">
+                        {% if movie.poster_path %}
+                            <img src="https://image.tmdb.org/t/p/w300{{ movie.poster_path }}" 
+                                 alt="{{ movie.title }}" class="poster-thumb">
+                        {% endif %}
+                        <div class="movie-info">
+                            <span class="movie-title">{{ movie.title }}</span>
+                            <span class="vote-average">⭐ {{ movie.vote_average }}</span>
+                            <span class="movie-genres">{{ movie.genres }}</span>
+                            <p class="movie-description">{{ movie.overview }}</p>
+                        </div>
+
+                    </a>
+                </li>
+            {% endfor %}
+            </ul>
+
+            <!-- Simple Pagination -->
+            <div class="pagination">
+                {% if page > 1 %}
+                    <a href="{{ url_for('main.ranking', page=page-1) }}">&laquo; Previous</a>
+                {% endif %}
+                <a href="{{ url_for('main.ranking', page=page+1) }}">Next &raquo;</a>
+            </div>
+        {% else %}
+            <p>No movies to display.</p>
+        {% endif %}
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='sidebar.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}🎬 {{ movie.title }}{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="container movie-details">
+        <div class="movie-header">
+            {% if movie.poster_path %}
+            <img src="https://image.tmdb.org/t/p/w300{{ movie.poster_path }}" alt="{{ movie.title }}" class="poster-thumb">
+            {% endif %}
+            <div class="movie-main-info">
+                <h1>{{ movie.title }}</h1>
+                {% if movie.tagline %}
+                    <h3><em>{{ movie.tagline }}</em></h3>
+                {% endif %}
+                <p>⭐ {{ movie.vote_average }} ({{ movie.vote_count }} votes)</p>
+                <p>{{ movie.overview }}</p>
+            </div>
+        </div>
+
+        <div class="movie-additional-info">
+            <h3>Additional Information:</h3>
+            <ul>
+                <li>Status: {{ movie.status }}</li>
+                <li>Release Date: {{ movie.release_date }}</li>
+                <li>Runtime: {{ movie.runtime }} min</li>
+                <li>Budget: {{ "{:,}".format(movie.budget) }} $</li>
+                <li>Revenue: {{ "{:,}".format(movie.revenue) }} $</li>
+                <li>Original Language: {{ movie.original_language }}</li>
+                <li>Genres: {{ movie.genres }}</li>
+                <li>Production Companies: {{ movie.production_companies }}</li>
+                <li>Production Countries: {{ movie.production_countries }}</li>
+                {% if movie.homepage %}
+                    <li>Homepage: <a href="{{ movie.homepage }}" target="_blank">{{ movie.homepage }}</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='sidebar.js') }}"></script>
+{% endblock %}

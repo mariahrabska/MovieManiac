@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}🎬My Watchlist{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <div class="container">
+        <h2><i class="fas fa-bookmark"></i> Your Watchlist:</h2>
+
+        <div class="watchlist-form">
+    {% if genres %}
+    <label for="genre-filter">Filter by Genre:</label>
+    <select id="genre-filter">
+        <option value="all">All</option>
+        {% for genre in genres %}
+            <option value="{{ genre }}">{{ genre }}</option>
+        {% endfor %}
+    </select>
+    {% endif %}
+
+    <label for="sort-by">Sort by:</label>
+    <select id="sort-by">
+        <option value="title-asc">Title A → Z</option>
+        <option value="title-desc">Title Z → A</option>
+        <option value="year-asc">Year Ascending</option>
+        <option value="year-desc">Year Descending</option>
+    </select>
+
+    <div class="autocomplete-wrapper">
+        <input type="text" id="keyword-search" placeholder="Enter keyword...">
+        <ul id="keyword-suggestions" class="suggestions-list"></ul>
+    </div>
+</div>
+
+
+        {% if watchlist %}
+        <ul class="movie-list">
+            {% for movie in watchlist %}
+                <li class="movie-item"
+                    data-genres="{{ movie.genres }}"
+                    data-year="{{ movie.release_year }}"
+                    data-keywords="{{ movie.keywords|default('') }}">
+
+                    <!-- Movie Info -->
+                    <div class="movie-info">
+                        <a href="{{ url_for('main.movie_page', movie_id=movie['id']) }}">
+                            {% if movie.poster_path %}
+                                <img src="https://image.tmdb.org/t/p/w92{{ movie.poster_path }}"
+                                     alt="{{ movie.title }}" class="poster-thumb">
+                            {% endif %}
+                            <span class="movie-title">{{ movie.title }}</span>
+                        </a>
+                    </div>
+
+                    <!-- Movie Actions -->
+                    <div class="movie-actions">
+                        <!-- Remove from Watchlist -->
+                        <button class="remove-btn" data-id="{{ movie.id }}" title="Remove">
+                            <i class="fas fa-trash"></i>
+                        </button>
+
+                        <!-- Mark as Watched -->
+                        <button class="watched-btn" data-id="{{ movie.id }}" title="Watched">
+                            <i class="fas fa-eye"></i>
+                        </button>
+
+                        <!-- Favorites -->
+                        <button class="favorite-btn {% if movie.id in favorite_ids %}favorited{% endif %}"
+                                data-id="{{ movie.id }}" title="Favorite">
+                            <i class="fas fa-heart"></i>
+                        </button>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+            <p>You don't have any saved movies yet. Go to recommendations and add some!</p>
+        {% endif %}
+
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='sidebar.js') }}"></script>
+
+<script>
+// ===============================
+// GLOBAL VARIABLES
+// ===============================
+const movieList = document.querySelector('.movie-list');
+const genreFilter = document.getElementById('genre-filter');
+const keywordInput = document.getElementById('keyword-search');
+const suggestionsList = document.getElementById('keyword-suggestions');
+const sortSelect = document.getElementById('sort-by');
+let allKeywords = [];
+
+// ===============================
+// FETCH ALL KEYWORDS
+// ===============================
+fetch('/all_keywords')
+    .then(res => res.json())
+    .then(data => {
+        if(Array.isArray(data)) allKeywords = data.map(kw => kw.trim());
+        else console.error("Invalid data format /all_keywords:", data);
+    });
+
+let currentIndex = -1; // track selected item
+
+// ===============================
+// KEYWORD AUTOCOMPLETE
+// ===============================
+keywordInput.addEventListener("input", async function () {
+    const query = this.value.toLowerCase();
+    suggestionsList.innerHTML = "";
+    currentIndex = -1;
+
+    if (query.length < 1) return;
+
+    if (allKeywords.length === 0) {
+        try {
+            const response = await fetch("/all_keywords");
+            allKeywords = await response.json();
+        } catch (err) {
+            console.error("Error fetching keywords:", err);
+            return;
+        }
+    }
+
+    const filtered = allKeywords
+        .filter(kw => kw.toLowerCase().startsWith(query))
+        .slice(0, 5);
+
+    filtered.forEach(kw => {
+        const li = document.createElement("li");
+        li.className = "suggestion-item";
+        li.textContent = kw;
+
+        li.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            selectKeyword(kw);
+        });
+
+        suggestionsList.appendChild(li);
+    });
+});
+
+function selectKeyword(keyword) {
+    keywordInput.value = keyword;
+    suggestionsList.innerHTML = "";
+    currentIndex = -1;
+    filterMovies();
+}
+
+// Keyboard navigation
+keywordInput.addEventListener("keydown", function (e) {
+    const items = suggestionsList.querySelectorAll(".suggestion-item");
+
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (currentIndex < items.length - 1) currentIndex++;
+        updateActive(items);
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (currentIndex > 0) currentIndex--;
+        updateActive(items);
+    } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (currentIndex >= 0 && items[currentIndex]) {
+            selectKeyword(items[currentIndex].textContent);
+        }
+    } else if (e.key === "Escape") {
+        suggestionsList.innerHTML = "";
+        currentIndex = -1;
+    }
+});
+
+function updateActive(items) {
+    items.forEach((item, i) => {
+        item.classList.toggle("active", i === currentIndex);
+    });
+}
+
+// ===============================
+// FILTER MOVIES
+// ===============================
+function filterMovies() {
+    const selectedGenre = genreFilter ? genreFilter.value : 'all';
+    const keywordQuery = keywordInput.value.trim().toLowerCase();
+
+    document.querySelectorAll('.movie-item').forEach(item => {
+        const genres = item.dataset.genres ? item.dataset.genres.split('|') : [];
+        const keywords = item.dataset.keywords ? item.dataset.keywords.toLowerCase().split('|') : [];
+        const matchesGenre = selectedGenre === 'all' || genres.includes(selectedGenre);
+        const matchesKeyword = !keywordQuery || keywords.some(k => k.includes(keywordQuery));
+        item.style.display = (matchesGenre && matchesKeyword) ? '' : 'none';
+    });
+}
+
+if(genreFilter) genreFilter.addEventListener('change', filterMovies);
+
+// ===============================
+// REMOVE MOVIE
+// ===============================
+document.querySelectorAll('.remove-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const movieId = btn.dataset.id;
+        fetch('/remove_from_watchlist', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({movie_id: movieId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) btn.closest('li').remove();
+            else alert("❌ " + (data.error || "Failed to remove the movie."));
+        });
+    });
+});
+
+// ===============================
+// MARK AS WATCHED
+// ===============================
+document.querySelectorAll('.watched-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const movieId = btn.dataset.id;
+        fetch('/mark_as_watched', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({movie_id: movieId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) btn.closest('li').remove();
+            else alert("❌ Failed to mark movie as watched.");
+        });
+    });
+});
+
+// ===============================
+// TOGGLE FAVORITE
+// ===============================
+document.querySelectorAll('.favorite-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const movieId = btn.dataset.id;
+        fetch('/favorites/toggle', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({movie_id: movieId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                btn.classList.toggle('favorited', data.favorited);
+            } else {
+                alert("❌ Failed to update favorites.");
+            }
+        });
+    });
+});
+
+// ===============================
+// SORT MOVIES
+// ===============================
+if(sortSelect){
+    sortSelect.addEventListener('change', () => {
+        const items = Array.from(movieList.querySelectorAll('.movie-item'));
+        const sortValue = sortSelect.value;
+
+        items.sort((a, b) => {
+            if(sortValue.startsWith('title')){
+                const titleA = a.querySelector('.movie-title').textContent.toLowerCase();
+                const titleB = b.querySelector('.movie-title').textContent.toLowerCase();
+                return sortValue === 'title-asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+            } else if(sortValue.startsWith('year')){
+                const yearA = parseInt(a.dataset.year) || 0;
+                const yearB = parseInt(b.dataset.year) || 0;
+                return sortValue === 'year-asc' ? yearA - yearB : yearB - yearA;
+            }
+        });
+
+        items.forEach(item => movieList.appendChild(item));
+    });
+}
+</script>
+{% endblock %}
