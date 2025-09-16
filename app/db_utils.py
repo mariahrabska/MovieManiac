@@ -26,14 +26,26 @@ def get_watchlist_for_user(user_id, watched=None):
     return [dict(row) for row in rows]
 
 
-def add_to_watchlist(user_id, movie_id, watched=0):
-    """Dodaje film do watchlist użytkownika po movie_id"""
+def add_or_update_watchlist(user_id, movie_id, watched=0):
+    """Dodaje film jeśli nie istnieje, albo aktualizuje watched."""
     with get_db_connection() as conn:
-        conn.execute(
-            'INSERT INTO watchlist (user_id, movie_id, watched) VALUES (?, ?, ?)',
-            (user_id, movie_id, watched)
-        )
+        existing = conn.execute(
+            "SELECT 1 FROM watchlist WHERE user_id = ? AND movie_id = ?",
+            (user_id, movie_id)
+        ).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE watchlist SET watched = ? WHERE user_id = ? AND movie_id = ?",
+                (watched, user_id, movie_id)
+            )
+        else:
+            conn.execute(
+                "INSERT INTO watchlist (user_id, movie_id, watched) VALUES (?, ?, ?)",
+                (user_id, movie_id, watched)
+            )
         conn.commit()
+
+
 
 def remove_from_watchlist(user_id, movie_id):
     with get_db_connection() as conn:

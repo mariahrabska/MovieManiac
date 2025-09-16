@@ -92,6 +92,7 @@ const keywordInput = document.getElementById('keyword-search');
 const suggestionsList = document.getElementById('keyword-suggestions');
 const sortSelect = document.getElementById('sort-by');
 let allKeywords = [];
+let currentIndex = -1;
 
 // ===============================
 // FETCH ALL KEYWORDS
@@ -99,11 +100,9 @@ let allKeywords = [];
 fetch('/all_keywords')
     .then(res => res.json())
     .then(data => {
-        if(Array.isArray(data)) allKeywords = data.map(kw => kw.trim());
+        if (Array.isArray(data)) allKeywords = data.map(kw => kw.trim());
         else console.error("Invalid data format /all_keywords:", data);
     });
-
-let currentIndex = -1; // track selected item
 
 // ===============================
 // KEYWORD AUTOCOMPLETE
@@ -113,9 +112,9 @@ keywordInput.addEventListener("input", async function () {
     suggestionsList.innerHTML = "";
     currentIndex = -1;
 
-    if (query.length < 1) return;
+    if (!query) return;
 
-    if (allKeywords.length === 0) {
+    if (!allKeywords.length) {
         try {
             const response = await fetch("/all_keywords");
             allKeywords = await response.json();
@@ -133,12 +132,10 @@ keywordInput.addEventListener("input", async function () {
         const li = document.createElement("li");
         li.className = "suggestion-item";
         li.textContent = kw;
-
-        li.addEventListener("mousedown", function (e) {
+        li.addEventListener("mousedown", e => {
             e.preventDefault();
             selectKeyword(kw);
         });
-
         suggestionsList.appendChild(li);
     });
 });
@@ -153,6 +150,7 @@ function selectKeyword(keyword) {
 // Keyboard navigation
 keywordInput.addEventListener("keydown", function (e) {
     const items = suggestionsList.querySelectorAll(".suggestion-item");
+    if (!items.length) return;
 
     if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -164,9 +162,7 @@ keywordInput.addEventListener("keydown", function (e) {
         updateActive(items);
     } else if (e.key === "Enter") {
         e.preventDefault();
-        if (currentIndex >= 0 && items[currentIndex]) {
-            selectKeyword(items[currentIndex].textContent);
-        }
+        if (currentIndex >= 0 && items[currentIndex]) selectKeyword(items[currentIndex].textContent);
     } else if (e.key === "Escape") {
         suggestionsList.innerHTML = "";
         currentIndex = -1;
@@ -174,9 +170,7 @@ keywordInput.addEventListener("keydown", function (e) {
 });
 
 function updateActive(items) {
-    items.forEach((item, i) => {
-        item.classList.toggle("active", i === currentIndex);
-    });
+    items.forEach((item, i) => item.classList.toggle("active", i === currentIndex));
 }
 
 // ===============================
@@ -195,14 +189,42 @@ function filterMovies() {
     });
 }
 
-if(genreFilter) genreFilter.addEventListener('change', filterMovies);
+if (genreFilter) genreFilter.addEventListener('change', filterMovies);
 
 // ===============================
-// REMOVE MOVIE
+// SORT MOVIES
 // ===============================
-document.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const movieId = btn.dataset.id;
+if (sortSelect && movieList) {
+    sortSelect.addEventListener('change', () => {
+        const items = Array.from(movieList.querySelectorAll('.movie-item'));
+        const sortValue = sortSelect.value;
+
+        items.sort((a, b) => {
+            if (sortValue.startsWith('title')) {
+                const titleA = a.querySelector('.movie-title').textContent.toLowerCase();
+                const titleB = b.querySelector('.movie-title').textContent.toLowerCase();
+                return sortValue === 'title-asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
+            } else if (sortValue.startsWith('year')) {
+                const yearA = parseInt(a.dataset.year) || 0;
+                const yearB = parseInt(b.dataset.year) || 0;
+                return sortValue === 'year-asc' ? yearA - yearB : yearB - yearA;
+            }
+        });
+
+        items.forEach(item => movieList.appendChild(item));
+    });
+}
+
+// ===============================
+// DELEGATED EVENT LISTENER FOR MOVIE ACTIONS
+// ===============================
+movieList.addEventListener('click', (e) => {
+    const btn = e.target.closest('.remove-btn, .watched-btn, .favorite-btn');
+    if (!btn) return;
+
+    const movieId = btn.dataset.id;
+
+    if (btn.classList.contains('remove-btn')) {
         fetch('/remove_from_watchlist', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -213,15 +235,8 @@ document.querySelectorAll('.remove-btn').forEach(btn => {
             if(data.success) btn.closest('li').remove();
             else alert("❌ " + (data.error || "Failed to remove the movie."));
         });
-    });
-});
 
-// ===============================
-// MARK AS WATCHED
-// ===============================
-document.querySelectorAll('.watched-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const movieId = btn.dataset.id;
+    } else if (btn.classList.contains('watched-btn')) {
         fetch('/mark_as_watched', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -232,15 +247,8 @@ document.querySelectorAll('.watched-btn').forEach(btn => {
             if(data.success) btn.closest('li').remove();
             else alert("❌ Failed to mark movie as watched.");
         });
-    });
-});
 
-// ===============================
-// TOGGLE FAVORITE
-// ===============================
-document.querySelectorAll('.favorite-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const movieId = btn.dataset.id;
+    } else if (btn.classList.contains('favorite-btn')) {
         fetch('/favorites/toggle', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
@@ -254,31 +262,8 @@ document.querySelectorAll('.favorite-btn').forEach(btn => {
                 alert("❌ Failed to update favorites.");
             }
         });
-    });
+    }
 });
-
-// ===============================
-// SORT MOVIES
-// ===============================
-if(sortSelect){
-    sortSelect.addEventListener('change', () => {
-        const items = Array.from(movieList.querySelectorAll('.movie-item'));
-        const sortValue = sortSelect.value;
-
-        items.sort((a, b) => {
-            if(sortValue.startsWith('title')){
-                const titleA = a.querySelector('.movie-title').textContent.toLowerCase();
-                const titleB = b.querySelector('.movie-title').textContent.toLowerCase();
-                return sortValue === 'title-asc' ? titleA.localeCompare(titleB) : titleB.localeCompare(titleA);
-            } else if(sortValue.startsWith('year')){
-                const yearA = parseInt(a.dataset.year) || 0;
-                const yearB = parseInt(b.dataset.year) || 0;
-                return sortValue === 'year-asc' ? yearA - yearB : yearB - yearA;
-            }
-        });
-
-        items.forEach(item => movieList.appendChild(item));
-    });
-}
 </script>
+
 {% endblock %}

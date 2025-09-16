@@ -50,6 +50,12 @@
                         </div>
 
                         <div class="movie-actions">
+                            <!-- Favorites -->
+                            <button class="favorite-btn {% if movie.movie_id in favorite_ids %}favorited{% endif %}"
+                                    data-id="{{ movie['movie_id'] }}" title="Favorite">
+                                <i class="fas fa-heart"></i>
+                            </button>
+
                             <button class="remove-btn" data-id="{{ movie['movie_id'] }}" title="Remove from watched">
                                 <i class="fas fa-trash"></i>
                             </button>
@@ -65,7 +71,41 @@
 </div>
 
 <script>
-// Remove movies from watched
+// ===============================
+// GLOBAL ELEMENTS
+// ===============================
+const movieList = document.querySelector('.movie-list');
+const genreFilter = document.getElementById('genre-filter');
+const sortSelect = document.getElementById('sort-by');
+
+// ===============================
+// NOTIFICATION FUNCTION
+// ===============================
+function showNotification(message) {
+    let notif = document.getElementById("notification");
+    if (!notif) {
+        notif = document.createElement("div");
+        notif.id = "notification";
+        notif.style.position = "fixed";
+        notif.style.bottom = "20px";
+        notif.style.right = "20px";
+        notif.style.padding = "10px 15px";
+        notif.style.background = "#333";
+        notif.style.color = "#fff";
+        notif.style.borderRadius = "5px";
+        notif.style.zIndex = 9999;
+        notif.style.opacity = 0;
+        notif.style.transition = "opacity 0.3s";
+        document.body.appendChild(notif);
+    }
+    notif.textContent = message;
+    notif.style.opacity = 1;
+    setTimeout(() => notif.style.opacity = 0, 2000);
+}
+
+// ===============================
+// REMOVE MOVIE
+// ===============================
 document.querySelectorAll('.remove-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const movie_id = btn.dataset.id;
@@ -78,33 +118,65 @@ document.querySelectorAll('.remove-btn').forEach(btn => {
         .then(data => {
             if(data.success){
                 btn.closest('li').remove();
+                showNotification("✔ Movie removed from watched");
             } else {
-                alert("❌ " + (data.error || "Failed to remove movie from watched."));
+                showNotification("❌ " + (data.error || "Failed to remove movie"));
             }
         });
     });
 });
 
-// Genre filtering
-const genreFilter = document.getElementById('genre-filter');
+// ===============================
+// TOGGLE FAVORITE
+// ===============================
+if (movieList) {
+    movieList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.favorite-btn');
+        if (!btn) return;
+
+        const movieId = btn.dataset.id;
+        btn.disabled = true;
+
+        fetch('/favorites/toggle', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({movie_id: movieId})
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success){
+                btn.classList.toggle('favorited', data.favorited);
+                showNotification(data.favorited ? "✔ Added to favorites" : "❌ Removed from favorites");
+            } else {
+                showNotification("❌ Failed to update favorites");
+            }
+        })
+        .catch(() => showNotification("⚠️ Connection error – Try again."))
+        .finally(() => btn.disabled = false);
+    });
+}
+
+// ===============================
+// GENRE FILTER
+// ===============================
 if (genreFilter) {
     genreFilter.addEventListener('change', () => {
         const selected = genreFilter.value;
         document.querySelectorAll('.movie-item').forEach(item => {
-            const movieGenres = item.dataset.genres.split('|');
+            const movieGenres = item.dataset.genres ? item.dataset.genres.split('|') : [];
             item.style.display = (selected === 'all' || movieGenres.includes(selected)) ? '' : 'none';
         });
     });
 }
 
-// Sorting
-const sortSelect = document.getElementById('sort-by');
+// ===============================
+// SORT MOVIES
+// ===============================
 if (sortSelect) {
     sortSelect.addEventListener('change', () => {
-        const ul = document.querySelector('.movie-list');
-        const items = Array.from(ul.querySelectorAll('.movie-item'));
-
+        const items = Array.from(movieList.querySelectorAll('.movie-item'));
         const sortValue = sortSelect.value;
+
         items.sort((a, b) => {
             if (sortValue.startsWith('title')) {
                 const titleA = a.querySelector('.movie-title').textContent.toLowerCase();
@@ -117,8 +189,10 @@ if (sortSelect) {
             }
         });
 
-        items.forEach(item => ul.appendChild(item));
+        items.forEach(item => movieList.appendChild(item));
     });
 }
 </script>
+
+
 {% endblock %}

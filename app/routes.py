@@ -10,7 +10,7 @@ from .recommender import (
 from .db_utils import (
     get_all_genres,
     get_watchlist_for_user,
-    add_to_watchlist,
+    add_or_update_watchlist,
     remove_from_watchlist,
     update_user_credentials,
     get_user_by_id,
@@ -149,24 +149,12 @@ def movies_list():
 
 @main.route('/add_to_watchlist', methods=['POST'])
 def add_to_watchlist_route():
-    if 'user_id' not in session:
-        return jsonify({'error': 'Nieautoryzowany dostęp'}), 401
-
     data = request.get_json()
-    movie_id = data.get('movie_id')
+    movie_id = int(data.get('movie_id'))
     watched = int(data.get('watched', 0))
-
-    if not movie_id:
-        return jsonify({'error': 'Brak ID filmu'}), 400
-    movie_id = int(movie_id)
-
-    user_id = session['user_id']
-    watchlist = get_watchlist_for_user(user_id)
-    if movie_id in [m['movie_id'] for m in watchlist]:
-        return jsonify({'success': False, 'error': 'Film już jest na liście'}), 409
-
-    add_to_watchlist(user_id, movie_id, watched=watched)
+    add_or_update_watchlist(session['user_id'], movie_id, watched)
     return jsonify({'success': True})
+
 
 
 @main.route('/remove_from_watchlist', methods=['POST'])
