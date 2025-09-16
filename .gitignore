@@ -6,3 +6,4 @@ instance/
 *.log
 .vscode/
 .idea/
+movielens.db
