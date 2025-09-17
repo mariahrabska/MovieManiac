@@ -58,15 +58,21 @@ def recommend():
     selected_movie = get_movie_details(movie_title)
 
     user_id = session['user_id']
-    watchlist_entries = get_watchlist_for_user(user_id)  # lista dictów z movie_id
+    watchlist_entries = get_watchlist_for_user(user_id, watched=0)
+    watched_entries = get_watchlist_for_user(user_id, watched=1)
+
     watchlist_ids = [m['movie_id'] for m in watchlist_entries]
+    watched_ids = [m['movie_id'] for m in watched_entries]
 
     return render_template(
         "recommendations.html",
         movie=selected_movie,
         recommendations=recommendations,
-        watchlist_ids=watchlist_ids  # teraz po movie_id
+        watchlist_ids=watchlist_ids,
+        watched_ids=watched_ids,
+        favorite_ids=[m['movie_id'] for m in get_favorites_for_user(user_id)]
     )
+
 
 
 

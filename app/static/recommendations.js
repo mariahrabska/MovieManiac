@@ -95,25 +95,41 @@ document.addEventListener('DOMContentLoaded', function() {
         let endpoint = '';
         let bodyData = { movie_id: movie_id };
 
-        if (target.classList.contains('watchlist-checkbox')) {
+    if (target.classList.contains('watchlist-checkbox')) {
+        if (target.checked) {
+            // Dodaj do watchlisty
             endpoint = '/add_to_watchlist';
             bodyData.watched = 0;
-            if (target.checked) {
-                const watchedCheckbox = parent.querySelector('.watched-checkbox');
-                if (watchedCheckbox && watchedCheckbox.checked) watchedCheckbox.checked = false;
-            }
-        } else if (target.classList.contains('watched-checkbox')) {
-            endpoint = '/add_to_watchlist';
-            bodyData.watched = target.checked ? 1 : 0;
-            if (target.checked) {
-                const watchlistCheckbox = parent.querySelector('.watchlist-checkbox');
-                if (watchlistCheckbox && watchlistCheckbox.checked) watchlistCheckbox.checked = false;
-            }
-        } else if (target.classList.contains('favorite-checkbox')) {
-            endpoint = target.checked ? '/favorites/add' : '/favorites/remove';
+
+            // jeśli był zaznaczony watched, odznaczamy
+            const watchedCheckbox = parent.querySelector('.watched-checkbox');
+            if (watchedCheckbox && watchedCheckbox.checked) watchedCheckbox.checked = false;
+        } else {
+            // Odznaczenie → usuń z watchlisty
+            endpoint = '/remove_from_watchlist';
         }
 
-        target.disabled = true;
+    } else if (target.classList.contains('watched-checkbox')) {
+        if (target.checked) {
+            // Zaznaczenie jako watched
+            endpoint = '/add_to_watchlist';
+            bodyData.watched = 1;
+
+            // odznaczamy watchlist, jeśli był zaznaczony
+            const watchlistCheckbox = parent.querySelector('.watchlist-checkbox');
+            if (watchlistCheckbox && watchlistCheckbox.checked) watchlistCheckbox.checked = false;
+        } else {
+            // Odznaczenie watched → ustaw watched=0 (ale pozostaw w watchlist?)
+            endpoint = '/add_to_watchlist';
+            bodyData.watched = 0;
+        }
+
+    } else if (target.classList.contains('favorite-checkbox')) {
+        endpoint = target.checked ? '/favorites/add' : '/favorites/remove';
+    }
+
+    target.disabled = true;
+
 
         try {
             const res = await fetch(endpoint, {
