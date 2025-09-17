@@ -2,10 +2,10 @@
 import unittest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 import random
 import string
@@ -16,7 +16,7 @@ class RegisterPageTests(unittest.TestCase):
         options = Options()
         options.add_argument("--headless")
         service = Service()
-        cls.driver = webdriver.Firefox(service=service, options=options)
+        cls.driver = webdriver.Chrome(service=service, options=options)
         cls.driver.delete_all_cookies()
         cls.wait = WebDriverWait(cls.driver, 10)
 

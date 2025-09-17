@@ -21,7 +21,7 @@ class SettingsPageTests(unittest.TestCase):
         password_input = self.driver.find_element(By.ID, "password")
 
         email_input.send_keys("testuser@example.com")
-        password_input.send_keys("validpassword")
+        password_input.send_keys("newpassword")
 
         self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
         self.wait.until(EC.url_changes("http://127.0.0.1:5000/login"))
@@ -33,7 +33,7 @@ class SettingsPageTests(unittest.TestCase):
         self.driver.quit()
 
     def test_page_title(self):
-        """Sprawdza czy tytuł strony zawiera '⚙️Account Settings'."""
+        """Sprawdza czy tytuł strony zawiera 'Account Settings'."""
         self.driver.get("http://127.0.0.1:5000/settings")
         self.assertIn("Account Settings", self.driver.title)
 
@@ -82,7 +82,7 @@ class SettingsPageTests(unittest.TestCase):
         username_input.clear()
         username_input.send_keys("testuser")
         password_input.clear()
-        password_input.send_keys("newpassword")
+        password_input.send_keys("validpassword")
 
         self.driver.find_element(By.CLASS_NAME, "btn-save").click()
 
