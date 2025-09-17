@@ -9,16 +9,19 @@
         <!-- Genre filter -->
         {% if genres %}
         <label for="genre-filter">Filter by genre:</label>
+                    <div class="autocomplete-wrapper">
         <select id="genre-filter">
             <option value="all">All</option>
             {% for genre in genres %}
                 <option value="{{ genre }}">{{ genre }}</option>
             {% endfor %}
         </select>
+                    </div>
         {% endif %}
 
         <!-- Sorting -->
         <label for="sort-by">Sort by:</label>
+        <div class="autocomplete-wrapper">
         <select id="sort-by">
             <option value="title-asc">Title A → Z</option>
             <option value="title-desc">Title Z → A</option>
@@ -27,10 +30,13 @@
             <option value="added-desc">Date added (newest)</option>
             <option value="added-asc">Date added (oldest)</option>
         </select>
-
-        <!-- Keyword search -->
+</div>
+        <!-- Keyword search with autocomplete -->
         <label for="keyword-search">Search by keywords:</label>
-        <input type="text" id="keyword-search" placeholder="Type a keyword...">
+        <div class="autocomplete-wrapper">
+            <input type="text" id="keyword-search" placeholder="Type a keyword...">
+            <ul id="keyword-suggestions" class="suggestions-list"></ul>
+        </div>
 
         {% if favorites %}
             <ul class="movie-list">
@@ -39,7 +45,7 @@
                         data-genres="{{ movie.genres }}" 
                         data-year="{{ movie.release_year }}" 
                         data-added="{{ movie.added_at }}" 
-                        data-keywords="{{ movie.keywords }}">
+                        data-keywords="{{ movie.keywords|default('') }}">
 
                         <div class="movie-info">
                             <a href="{{ url_for('main.movie_page', movie_id=movie.movie_id) }}">
@@ -89,13 +95,7 @@ document.querySelectorAll('.remove-btn').forEach(btn => {
 // Filter by genre
 const genreFilter = document.getElementById('genre-filter');
 if (genreFilter) {
-    genreFilter.addEventListener('change', () => {
-        const selected = genreFilter.value;
-        document.querySelectorAll('.movie-item').forEach(item => {
-            const movieGenres = item.dataset.genres ? item.dataset.genres.split('|') : [];
-            item.style.display = (selected === 'all' || movieGenres.includes(selected)) ? '' : 'none';
-        });
-    });
+    genreFilter.addEventListener('change', filterMovies);
 }
 
 // Sorting
@@ -126,22 +126,93 @@ if (sortSelect) {
     });
 }
 
-// Keyword search
+// ===============================
+// KEYWORD AUTOCOMPLETE
+// ===============================
 const keywordInput = document.getElementById('keyword-search');
-if (keywordInput) {
-    keywordInput.addEventListener('input', () => {
-        const query = keywordInput.value.toLowerCase();
-        document.querySelectorAll('.movie-item').forEach(item => {
-            const keywords = item.dataset.keywords ? item.dataset.keywords.toLowerCase() : '';
-            const matchesKeyword = keywords.includes(query);
-            
-            // Genre filtering still applies
-            const selectedGenre = genreFilter ? genreFilter.value : 'all';
-            const movieGenres = item.dataset.genres ? item.dataset.genres.split('|') : [];
-            const matchesGenre = (selectedGenre === 'all' || movieGenres.includes(selectedGenre));
+const suggestionsList = document.getElementById('keyword-suggestions');
+let allKeywords = [];
+let currentIndex = -1;
 
-            item.style.display = (matchesKeyword && matchesGenre) ? '' : 'none';
+// Fetch all keywords from server
+fetch('/all_keywords')
+    .then(res => res.json())
+    .then(data => {
+        if (Array.isArray(data)) allKeywords = data.map(kw => kw.trim());
+        else console.error("Invalid data format /all_keywords:", data);
+    });
+
+keywordInput.addEventListener("input", () => {
+    const query = keywordInput.value.toLowerCase();
+    suggestionsList.innerHTML = "";
+    currentIndex = -1;
+
+    if (!query) return;
+
+    const filtered = allKeywords
+        .filter(kw => kw.toLowerCase().startsWith(query))
+        .slice(0, 5);
+
+    filtered.forEach(kw => {
+        const li = document.createElement("li");
+        li.className = "suggestion-item";
+        li.textContent = kw;
+        li.addEventListener("mousedown", e => {
+            e.preventDefault();
+            selectKeyword(kw);
         });
+        suggestionsList.appendChild(li);
+    });
+
+    filterMovies();
+});
+
+function selectKeyword(keyword) {
+    keywordInput.value = keyword;
+    suggestionsList.innerHTML = "";
+    currentIndex = -1;
+    filterMovies();
+}
+
+// Keyboard navigation
+keywordInput.addEventListener("keydown", function (e) {
+    const items = suggestionsList.querySelectorAll(".suggestion-item");
+    if (!items.length) return;
+
+    if (e.key === "ArrowDown") {
+        e.preventDefault();
+        if (currentIndex < items.length - 1) currentIndex++;
+        updateActive(items);
+    } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (currentIndex > 0) currentIndex--;
+        updateActive(items);
+    } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (currentIndex >= 0 && items[currentIndex]) selectKeyword(items[currentIndex].textContent);
+    } else if (e.key === "Escape") {
+        suggestionsList.innerHTML = "";
+        currentIndex = -1;
+    }
+});
+
+function updateActive(items) {
+    items.forEach((item, i) => item.classList.toggle("active", i === currentIndex));
+}
+
+// ===============================
+// FILTER MOVIES FUNCTION
+// ===============================
+function filterMovies() {
+    const selectedGenre = genreFilter ? genreFilter.value : 'all';
+    const keywordQuery = keywordInput.value.trim().toLowerCase();
+
+    document.querySelectorAll('.movie-item').forEach(item => {
+        const genres = item.dataset.genres ? item.dataset.genres.split('|') : [];
+        const keywords = item.dataset.keywords ? item.dataset.keywords.toLowerCase().split('|') : [];
+        const matchesGenre = selectedGenre === 'all' || genres.includes(selectedGenre);
+        const matchesKeyword = !keywordQuery || keywords.some(k => k.includes(keywordQuery));
+        item.style.display = (matchesGenre && matchesKeyword) ? '' : 'none';
     });
 }
 
