@@ -1,4 +1,5 @@
-import unittest
+# tests/test_dashboard.py
+import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -6,73 +7,80 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-class DashboardPageTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        chrome_options = Options()
-        # chrome_options.add_argument("--headless=new")  # opcjonalnie uruchomienie w trybie headless
-        cls.driver = webdriver.Chrome(options=chrome_options)
-        cls.wait = WebDriverWait(cls.driver, 10)
 
-        # Otwieramy stronę logowania
-        cls.driver.get("http://127.0.0.1:5000/login")
+@pytest.fixture(scope="module")
+def driver():
+    """Fixtura inicjalizująca przeglądarkę i logująca użytkownika na czas testów"""
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless=new")  # odkomentuj, jeśli chcesz tryb headless
+    driver = webdriver.Chrome(options=chrome_options)
+    wait = WebDriverWait(driver, 10)
 
-        # Logowanie użytkownika testowego
-        username_input = cls.wait.until(EC.presence_of_element_located((By.ID, "email")))
-        password_input = cls.driver.find_element(By.ID, "password")
+    # Otwieramy stronę logowania
+    driver.get("http://127.0.0.1:5000/login")
 
-        username_input.send_keys("rampam@gmail.com")
-        password_input.send_keys("rampam123")
-        password_input.send_keys(Keys.RETURN)
+    # Logowanie użytkownika testowego
+    username_input = wait.until(EC.presence_of_element_located((By.ID, "email")))
+    password_input = driver.find_element(By.ID, "password")
 
-        # Oczekiwanie na załadowanie dashboardu
-        cls.wait.until(EC.title_contains("🎬 Find recommendations"))
+    username_input.send_keys("rampam@gmail.com")
+    password_input.send_keys("rampam123")
+    password_input.send_keys(Keys.RETURN)
 
-    @classmethod
-    def tearDownClass(cls):
-        # Zamknięcie przeglądarki po zakończeniu testów
-        cls.driver.quit()
+    # Oczekiwanie na załadowanie dashboardu
+    wait.until(EC.title_contains("🎬 Find recommendations"))
 
-    def test_page_title(self):
-        """Sprawdza, czy tytuł strony zawiera poprawny tekst"""
-        self.assertIn("🎬 Find recommendations", self.driver.title)
+    yield driver  # udostępniamy driver testom
 
-    def test_movie_input_exists(self):
-        """Sprawdza, czy istnieje pole do wpisania tytułu filmu"""
-        input_box = self.wait.until(EC.presence_of_element_located((By.ID, "movie_title_input")))
-        self.assertTrue(input_box.is_displayed())
-
-    def test_submit_button_exists(self):
-        """Sprawdza, czy przycisk wyszukiwania rekomendacji istnieje i ma poprawny tekst"""
-        button = self.driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
-        self.assertTrue(button.is_displayed())
-        self.assertEqual(button.text, "Show Recommendations")
-
-    def test_error_shown_for_invalid_movie(self):
-        """Sprawdza, czy po wpisaniu nieistniejącego filmu pojawia się komunikat błędu"""
-        input_box = self.driver.find_element(By.ID, "movie_title_input")
-        button = self.driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
-
-        # Wyczyść pole i wpisz błędną nazwę filmu
-        input_box.clear()
-        input_box.send_keys("Movie doesn't exist")
-        button.click()
-
-        # Sprawdź, czy komunikat błędu jest widoczny
-        error_div = self.wait.until(EC.visibility_of_element_located((By.ID, "movie_error")))
-        self.assertIn("❌ Please select a movie from the suggestions list", error_div.text)
-
-    def test_input_autocomplete_options(self):
-        """Sprawdza, czy po wpisaniu litery pojawiają się propozycje filmów (autocomplete)"""
-        input_box = self.driver.find_element(By.ID, "movie_title_input")
-        input_box.clear()
-        input_box.send_keys("A")
-
-        # Poczekaj, aż lista opcji zostanie uzupełniona
-        self.wait.until(lambda driver: len(driver.find_elements(By.CSS_SELECTOR, "#movie_titles option")) > 0)
-        options = self.driver.find_elements(By.CSS_SELECTOR, "#movie_titles option")
-        self.assertGreater(len(options), 0)
+    driver.quit()  # zamknięcie przeglądarki po testach
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_page_title(driver):
+    """Sprawdza, czy tytuł strony zawiera poprawny tekst"""
+    assert "🎬 Find recommendations" in driver.title
+
+
+def test_movie_input_exists(driver):
+    """Sprawdza, czy istnieje pole do wpisania tytułu filmu"""
+    input_box = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.ID, "movie_title_input"))
+    )
+    assert input_box.is_displayed()
+
+
+def test_submit_button_exists(driver):
+    """Sprawdza, czy przycisk wyszukiwania rekomendacji istnieje i ma poprawny tekst"""
+    button = driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
+    assert button.is_displayed()
+    assert button.text == "Show Recommendations"
+
+
+def test_error_shown_for_invalid_movie(driver):
+    """Sprawdza, czy po wpisaniu nieistniejącego filmu pojawia się komunikat błędu"""
+    input_box = driver.find_element(By.ID, "movie_title_input")
+    button = driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
+
+    # Wpisanie nieistniejącego filmu
+    input_box.clear()
+    input_box.send_keys("Movie doesn't exist")
+    button.click()
+
+    # Sprawdź, czy komunikat błędu się pojawił
+    error_div = WebDriverWait(driver, 10).until(
+        EC.visibility_of_element_located((By.ID, "movie_error"))
+    )
+    assert "❌ Please select a movie from the suggestions list" in error_div.text
+
+
+def test_input_autocomplete_options(driver):
+    """Sprawdza, czy po wpisaniu litery pojawiają się propozycje filmów (autocomplete)"""
+    input_box = driver.find_element(By.ID, "movie_title_input")
+    input_box.clear()
+    input_box.send_keys("A")
+
+    # Poczekaj aż pojawią się opcje w autocomplete
+    WebDriverWait(driver, 10).until(
+        lambda d: len(d.find_elements(By.CSS_SELECTOR, "#movie_titles option")) > 0
+    )
+    options = driver.find_elements(By.CSS_SELECTOR, "#movie_titles option")
+    assert len(options) > 0

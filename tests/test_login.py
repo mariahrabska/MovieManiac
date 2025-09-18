@@ -1,83 +1,99 @@
-import unittest
+import pytest
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 
-class LoginPageTests(unittest.TestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        chrome_options = Options()
-        # chrome_options.add_argument("--headless=new")  # opcjonalnie uruchomienie w trybie headless (bez okna przeglądarki)
-        # Selenium Manager automatycznie zadba o sterownik ChromeDriver
-        cls.driver = webdriver.Chrome(options=chrome_options)
-        cls.wait = WebDriverWait(cls.driver, 10)
-        # Otwieramy stronę logowania
-        cls.driver.get("http://127.0.0.1:5000/login")
+@pytest.fixture(scope="module")
+def driver():
+    """Fixture: uruchamia i zamyka przeglądarkę dla wszystkich testów"""
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless=new")  # uruchom w trybie headless jeśli chcesz bez okna
 
-    @classmethod
-    def tearDownClass(cls):
-        # Zamknięcie przeglądarki po wszystkich testach
-        cls.driver.quit()
+    # Uruchamiamy Chrome przez Selenium
+    driver = webdriver.Chrome(options=chrome_options)
+    wait = WebDriverWait(driver, 10)
 
-    def test_page_title(self):
-        """Sprawdza, czy tytuł strony zawiera 'Login'"""
-        self.assertIn("⚡ MovieManiac: Login", self.driver.title)
+    # Przechodzimy na stronę logowania
+    driver.get("http://127.0.0.1:5000/login")
 
-    def test_email_input_exists(self):
-        """Sprawdza, czy istnieje pole do wpisania e-maila"""
-        email_input = self.wait.until(EC.presence_of_element_located((By.ID, "email")))
-        self.assertIsNotNone(email_input)
+    # Zwracamy driver + wait do testów
+    yield driver, wait
 
-    def test_password_input_exists(self):
-        """Sprawdza, czy istnieje pole hasła"""
-        password_input = self.driver.find_element(By.ID, "password")
-        self.assertIsNotNone(password_input)
-
-    def test_toggle_password_button_exists(self):
-        """Sprawdza, czy istnieje przycisk do pokazywania/ukrywania hasła"""
-        toggle_btn = self.driver.find_element(By.ID, "togglePassword")
-        self.assertIsNotNone(toggle_btn)
-
-    def test_login_button_exists(self):
-        """Sprawdza, czy przycisk logowania jest obecny"""
-        login_btn = self.driver.find_element(By.CSS_SELECTOR, "button.btn-primary")
-        self.assertIsNotNone(login_btn)
-
-    def test_toggle_password_functionality(self):
-        """Testuje działanie przycisku do zmiany widoczności hasła"""
-        password_input = self.driver.find_element(By.ID, "password")
-        toggle_btn = self.driver.find_element(By.ID, "togglePassword")
-
-        # Początkowo typ pola powinien być 'password'
-        self.assertEqual(password_input.get_attribute("type"), "password")
-
-        # Po kliknięciu powinien zmienić się na 'text'
-        toggle_btn.click()
-        self.assertEqual(password_input.get_attribute("type"), "text")
-
-        # Po kolejnym kliknięciu wraca na 'password'
-        toggle_btn.click()
-        self.assertEqual(password_input.get_attribute("type"), "password")
-
-    def test_register_link_exists(self):
-        """Sprawdza, czy istnieje link do rejestracji"""
-        register_link = self.driver.find_element(By.CSS_SELECTOR, ".register-link a")
-        self.assertIsNotNone(register_link)
-        self.assertIn("/register", register_link.get_attribute("href"))
-
-    def test_submit_empty_form_shows_error(self):
-        """Sprawdza, czy wysłanie pustego formularza powoduje błąd walidacji"""
-        login_btn = self.driver.find_element(By.CSS_SELECTOR, "button.btn-primary")
-        login_btn.click()
-
-        # Pole e-mail powinno zgłosić błąd walidacji
-        email_input = self.driver.find_element(By.ID, "email")
-        self.assertTrue(email_input.get_attribute("validationMessage") != "")
+    # Po zakończeniu testów zamykamy przeglądarkę
+    driver.quit()
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_page_title(driver):
+    """Sprawdza, czy tytuł strony logowania zawiera właściwy tekst"""
+    drv, _ = driver
+    assert "⚡ MovieManiac: Login" in drv.title
+
+
+def test_email_input_exists(driver):
+    """Sprawdza, czy pole e-mail jest obecne na stronie"""
+    drv, wait = driver
+    email_input = wait.until(EC.presence_of_element_located((By.ID, "email")))
+    assert email_input is not None
+
+
+def test_password_input_exists(driver):
+    """Sprawdza, czy pole hasła jest obecne na stronie"""
+    drv, _ = driver
+    password_input = drv.find_element(By.ID, "password")
+    assert password_input is not None
+
+
+def test_toggle_password_button_exists(driver):
+    """Sprawdza, czy istnieje przycisk do pokazywania/ukrywania hasła"""
+    drv, _ = driver
+    toggle_btn = drv.find_element(By.ID, "togglePassword")
+    assert toggle_btn is not None
+
+
+def test_login_button_exists(driver):
+    """Sprawdza, czy przycisk logowania jest obecny"""
+    drv, _ = driver
+    login_btn = drv.find_element(By.CSS_SELECTOR, "button.btn-primary")
+    assert login_btn is not None
+
+
+def test_toggle_password_functionality(driver):
+    """Sprawdza działanie przełącznika widoczności hasła"""
+    drv, _ = driver
+    password_input = drv.find_element(By.ID, "password")
+    toggle_btn = drv.find_element(By.ID, "togglePassword")
+
+    # Początkowo pole powinno mieć typ 'password'
+    assert password_input.get_attribute("type") == "password"
+
+    # Kliknięcie zmienia typ na 'text'
+    toggle_btn.click()
+    assert password_input.get_attribute("type") == "text"
+
+    # Kolejne kliknięcie wraca do 'password'
+    toggle_btn.click()
+    assert password_input.get_attribute("type") == "password"
+
+
+def test_register_link_exists(driver):
+    """Sprawdza, czy link do rejestracji istnieje i prowadzi do /register"""
+    drv, _ = driver
+    register_link = drv.find_element(By.CSS_SELECTOR, ".register-link a")
+    assert register_link is not None
+    assert "/register" in register_link.get_attribute("href")
+
+
+def test_submit_empty_form_shows_error(driver):
+    """Sprawdza, czy wysłanie pustego formularza wywołuje walidację"""
+    drv, _ = driver
+    login_btn = drv.find_element(By.CSS_SELECTOR, "button.btn-primary")
+
+    # Klikamy logowanie bez wypełniania formularza
+    login_btn.click()
+
+    # Pole e-mail powinno zgłosić błąd walidacji HTML5
+    email_input = drv.find_element(By.ID, "email")
+    assert email_input.get_attribute("validationMessage") != ""
