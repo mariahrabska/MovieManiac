@@ -33,6 +33,24 @@ def driver():
     yield driver
     driver.quit()
 
+import time
+
+def test_page_load_time(driver):
+    """Sprawdza, czy strona ładuje się w akceptowalnym czasie (max 3s)"""
+    start_time = time.time()
+
+    driver.get("http://127.0.0.1:5000/ranking")
+
+    # Poczekaj aż strona załaduje się w pełni (readyState=complete)
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    end_time = time.time()
+    load_time = end_time - start_time
+
+    print(f"Czas ładowania strony: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Strona ładuje się zbyt długo: {load_time:.2f} s"
 
 
 @pytest.mark.parametrize("width,height", [

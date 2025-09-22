@@ -25,6 +25,19 @@ def driver():
     # Po zakończeniu testów zamykamy przeglądarkę
     driver.quit()
 
+import time
+
+def test_page_load_time(driver):
+    """Sprawdza, czy strona logowania ładuje się w akceptowalnym czasie (max 3s)"""
+    drv, _ = driver
+    start_time = time.time()
+    drv.get("http://127.0.0.1:5000/login")
+    end_time = time.time()
+    load_time = end_time - start_time
+
+    print(f"Czas ładowania strony logowania: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Strona ładuje się zbyt długo: {load_time:.2f} s"
+
 
 @pytest.mark.parametrize("width,height", [
     (1920, 1080),  # Desktop (Full HD)

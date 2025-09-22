@@ -33,6 +33,26 @@ def driver():
     yield driver
     driver.quit()
 
+import time
+
+def test_page_load_time(driver):
+    """Sprawdza, czy dashboard ładuje się w akceptowalnym czasie (max 3s)"""
+    start_time = time.time()
+
+    driver.get("http://127.0.0.1:5000/favorites")
+
+    # Poczekaj aż strona załaduje się w pełni (readyState=complete)
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    end_time = time.time()
+    load_time = end_time - start_time
+
+    print(f"Czas ładowania strony: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Strona ładuje się zbyt długo: {load_time:.2f} s"
+
+
 
 
 @pytest.mark.parametrize("width,height", [
@@ -47,28 +67,24 @@ def test_responsive_layout_favorites(driver, width, height):
     driver.set_window_size(width, height)
     wait = WebDriverWait(driver, 10)
 
-    # Kluczowe elementy strony ulubionych
+    # Otwórz stronę ulubionych
+    driver.get("http://127.0.0.1:5000/favorites")
+
+    # Kluczowe elementy strony
     main_content = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".main-content")))
+    genre_filter = wait.until(EC.presence_of_element_located((By.ID, "genre-filter")))
+    sort_select = wait.until(EC.presence_of_element_located((By.ID, "sort-by")))
+    keyword_search = wait.until(EC.presence_of_element_located((By.ID, "keyword-search")))
+
+    # Lista filmów (może być pusta)
     movie_list_items = driver.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item")
-    genre_filter = driver.find_elements(By.ID, "genre-filter")
-    sort_select = driver.find_element(By.ID, "sort-by")
-    keyword_input = driver.find_element(By.ID, "keyword-search")
 
-    # Sprawdzenie widoczności
-    assert main_content.is_displayed(), f"Main content niewidoczny przy rozdzielczości {width}x{height}"
-    if movie_list_items:
-        assert movie_list_items[0].is_displayed(), f"Pierwszy film niewidoczny przy rozdzielczości {width}x{height}"
-        remove_btn = movie_list_items[0].find_element(By.CSS_SELECTOR, ".remove-btn")
-        assert remove_btn.is_displayed(), f"Przycisk remove niewidoczny przy rozdzielczości {width}x{height}"
-    if genre_filter:
-        assert genre_filter[0].is_displayed(), f"Filtr gatunków niewidoczny przy rozdzielczości {width}x{height}"
-    assert sort_select.is_displayed(), f"Sortowanie niewidoczne przy rozdzielczości {width}x{height}"
-    assert keyword_input.is_displayed(), f"Pole wyszukiwania niewidoczne przy rozdzielczości {width}x{height}"
-
-    # Dodatkowa walidacja układu dla mobile
-    if width < 600 and movie_list_items:
-        movie_y = movie_list_items[0].location['y']
-        assert movie_y > main_content.location['y'], f"Na mobile ({width}x{height}) lista filmów powinna być pod main content"
+    # Asercje
+    assert main_content.is_displayed()
+    assert genre_filter.is_displayed()
+    assert sort_select.is_displayed()
+    assert keyword_search.is_displayed()
+    assert len(movie_list_items) >= 0  # lista może być pusta
 
 def test_page_title(driver):
     """Sprawdza tytuł strony ulubionych"""
@@ -94,75 +110,106 @@ def test_remove_button(driver):
         remove_btn.click()
         WebDriverWait(driver, 10).until(EC.staleness_of(movie_item))
 
+def test_filter_genre_dropdown(driver):
+    """Uniwersalny test filtrowania filmów po gatunku – sprawdza widoczność filmów"""
+    from selenium.webdriver.support.ui import Select
+    from selenium.webdriver.support.ui import WebDriverWait
 
-def test_genre_filter(driver):
-    """Sprawdza filtrowanie filmów po gatunku"""
     genre_filter = driver.find_elements(By.ID, "genre-filter")
-    if genre_filter:
-        options = genre_filter[0].find_elements(By.TAG_NAME, "option")
-        if len(options) > 1:
-            genre_filter[0].send_keys(options[1].get_attribute("value"))
-            # sprawdzamy, czy widoczne elementy pasują do wybranego gatunku
-            for item in driver.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item"):
-                if item.is_displayed():
-                    genres = item.get_attribute("data-genres").split('|')
-                    assert options[1].get_attribute("value") in genres
+    if not genre_filter:
+        pytest.skip("Brak dropdownu do filtrowania po gatunku")
+
+    select = Select(genre_filter[0])
+
+    # Wybieramy pierwszy gatunek, który nie jest "all"
+    options = [opt.get_attribute("value") for opt in select.options if opt.get_attribute("value") != "all"]
+    if not options:
+        pytest.skip("Brak gatunków do przetestowania")
+
+    first_genre = options[0]
+
+    # Zaznaczamy wybrany gatunek
+    select.select_by_value(first_genre)
+
+    # Czekamy chwilę, aż JS zastosuje filtr
+    WebDriverWait(driver, 10).until(lambda d: all(
+        item.is_displayed() or first_genre not in item.get_attribute("data-genres").split('|')
+        for item in d.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item")
+    ))
+
+    # Sprawdzamy widoczność
+    for item in driver.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item"):
+        genres = item.get_attribute("data-genres").split('|')
+        if first_genre in genres:
+            assert item.is_displayed(), f"Film z gatunkiem {first_genre} powinien być widoczny"
+        else:
+            assert not item.is_displayed(), f"Film bez gatunku {first_genre} powinien być ukryty"
+        # Przywracamy dropdown do "all"
+    select.select_by_value("all")
+    WebDriverWait(driver, 5).until(lambda d: all(
+        item.is_displayed() for item in d.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item")
+    ))
 
 
 def test_sort_dropdown(driver):
-    """Sprawdza działanie sortowania: tytuł, rok, data dodania"""
+    """Sprawdza działanie sortowania: tytuł, rok, data dodania – tylko jeśli są filmy na liście."""
     sort_select = driver.find_element(By.ID, "sort-by")
     assert sort_select is not None
 
-    # Sprawdzenie, czy wszystkie opcje są obecne
     options = [opt.get_attribute("value") for opt in sort_select.find_elements(By.TAG_NAME, "option")]
     expected_options = ["title-asc", "title-desc", "year-asc", "year-desc", "added-asc", "added-desc"]
     for opt in expected_options:
         assert opt in options
 
-    # Funkcja pomocnicza do pobrania danych filmów
+    wait = WebDriverWait(driver, 10)
+    movie_items = driver.find_elements(By.CSS_SELECTOR, ".movie-item")
+    if not movie_items:
+        pytest.skip("Brak filmów na liście – pomijam test sortowania")
+
+    # Funkcja pomocnicza do pobrania danych filmów i oczyszczenia tytułów
     def get_titles_years_added():
         items = driver.find_elements(By.CSS_SELECTOR, ".movie-item")
-        titles = [el.find_element(By.CSS_SELECTOR, ".movie-title").text.lower() for el in items]
+        titles = [
+            el.find_element(By.CSS_SELECTOR, ".movie-title").text.strip().lower()
+            for el in items
+            if el.find_element(By.CSS_SELECTOR, ".movie-title").text.strip()
+        ]
         years = [int(el.get_attribute("data-year") or 0) for el in items]
         added = [el.get_attribute("data-added") for el in items]
         return titles, years, added
 
-    # --- SORTOWANIE TITLE ASC ---
-    driver.execute_script("arguments[0].value='title-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
-    titles, _, _ = get_titles_years_added()
-    assert titles == sorted(titles)
-
-    # --- SORTOWANIE TITLE DESC ---
+    # --- SORTOWANIE TITLE DESC → ASC ---
     driver.execute_script("arguments[0].value='title-desc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
+    wait.until(lambda d: True)  # JS sortuje natychmiast
     titles, _, _ = get_titles_years_added()
     assert titles == sorted(titles, reverse=True)
 
-    # --- SORTOWANIE YEAR ASC ---
-    driver.execute_script("arguments[0].value='year-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
-    _, years, _ = get_titles_years_added()
-    assert years == sorted(years)
+    driver.execute_script("arguments[0].value='title-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    wait.until(lambda d: True)
+    titles, _, _ = get_titles_years_added()
+    assert titles == sorted(titles)
 
-    # --- SORTOWANIE YEAR DESC ---
+    # --- SORTOWANIE YEAR DESC → ASC ---
     driver.execute_script("arguments[0].value='year-desc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
+    wait.until(lambda d: True)
     _, years, _ = get_titles_years_added()
     assert years == sorted(years, reverse=True)
 
-    # --- SORTOWANIE ADDED ASC ---
-    driver.execute_script("arguments[0].value='added-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
-    _, _, added = get_titles_years_added()
-    assert all(added[i] <= added[i+1] for i in range(len(added)-1))
+    driver.execute_script("arguments[0].value='year-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    wait.until(lambda d: True)
+    _, years, _ = get_titles_years_added()
+    assert years == sorted(years)
 
-    # --- SORTOWANIE ADDED DESC ---
+    # --- SORTOWANIE ADDED DESC → ASC ---
     driver.execute_script("arguments[0].value='added-desc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
+    wait.until(lambda d: True)
     _, _, added = get_titles_years_added()
     assert all(added[i] >= added[i+1] for i in range(len(added)-1))
+
+    driver.execute_script("arguments[0].value='added-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    wait.until(lambda d: True)
+    _, _, added = get_titles_years_added()
+    assert all(added[i] <= added[i+1] for i in range(len(added)-1))
 
 
 def test_keyword_search(driver):

@@ -34,6 +34,24 @@ def driver():
 
     driver.quit()  # zamknięcie przeglądarki po testach
 
+import time
+
+def test_page_load_time(driver):
+    """Sprawdza, czy dashboard ładuje się w akceptowalnym czasie (max 3s)"""
+    start_time = time.time()
+
+    driver.get("http://127.0.0.1:5000/dashboard")
+
+    # Czekamy aż strona w pełni się załaduje (readyState=complete)
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    end_time = time.time()
+    load_time = end_time - start_time
+
+    print(f"Czas ładowania dashboardu: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Dashboard ładuje się zbyt długo: {load_time:.2f} s"
 
 
 @pytest.mark.parametrize("width,height", [

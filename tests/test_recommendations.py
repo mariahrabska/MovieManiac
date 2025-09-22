@@ -37,6 +37,32 @@ def driver():
     yield driver
     driver.quit()
 
+import time
+def test_recommendations_page_load_time(driver):
+    """Sprawdza czas ładowania strony rekomendacji po wybraniu filmu (max 3s)"""
+    start_time = time.time()
+
+    # 1. Wejście na dashboard
+    driver.get("http://127.0.0.1:5000/dashboard")
+    wait = WebDriverWait(driver, 10)
+
+    # 2. Wpisanie tytułu filmu
+    movie_input = wait.until(EC.presence_of_element_located((By.ID, "movie_title_input")))
+    movie_input.clear()
+    movie_input.send_keys("Interstellar (2014)")
+
+    # 3. Kliknięcie przycisku szukania/rekomendacji
+    search_btn = driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
+    search_btn.click()
+
+    # 4. Czekamy aż lista rekomendacji się załaduje
+    wait.until(EC.presence_of_element_located((By.ID, "recommendationsList")))
+    wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
+
+    load_time = time.time() - start_time
+    print(f"Czas ładowania strony rekomendacji: {load_time:.2f} s")
+    assert load_time <= 3, f"Strona rekomendacji ładuje się zbyt długo: {load_time:.2f} s"
+
 
 @pytest.mark.parametrize("width,height", [
     (1920, 1080),  # Desktop (Full HD)

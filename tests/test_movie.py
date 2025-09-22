@@ -36,6 +36,30 @@ def driver():
     driver.quit()
 
 
+import time
+
+def test_page_load_time(driver):
+    """Sprawdza, czy strona ładuje się w akceptowalnym czasie (max 3s)"""
+    start_time = time.time()
+
+    driver.get("http://127.0.0.1:5000/movie/1")
+
+    # Poczekaj aż strona załaduje się w pełni (readyState=complete)
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    end_time = time.time()
+    load_time = end_time - start_time
+
+    print(f"Czas ładowania strony: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Strona ładuje się zbyt długo: {load_time:.2f} s"
+
+
+
+
+
+
 @pytest.mark.parametrize("width,height", [
     (1920, 1080),  # Desktop (Full HD)
     (1366, 768),   # Laptop
@@ -70,9 +94,17 @@ def test_responsive_layout_movie(driver, width, height):
         assert poster_y < title_y, f"Na mobile ({width}x{height}) plakat powinien być nad tytułem"
 
 def test_page_title_contains_movie_title(driver):
-    """Sprawdza, czy tytuł strony zawiera ikonę 🎬"""
-    title = driver.title
-    assert "🎬" in title
+    """Sprawdza, czy tytuł strony zawiera ikonę 🎬 oraz tytuł filmu z rokiem"""
+    # Pobranie tytułu filmu z nagłówka strony
+    movie_title_elem = driver.find_element(By.CSS_SELECTOR, "div.movie-main-info h1")
+    movie_title_text = movie_title_elem.text.strip()  # np. "Toy Story (1995)"
+    
+    # Pobranie tytułu strony
+    page_title = driver.title
+    
+    # Sprawdzenie, że strona zawiera ikonę i tytuł filmu
+    assert "🎬" in page_title, "Brak ikony 🎬 w tytule strony"
+    assert movie_title_text in page_title, f"Tytuł strony nie zawiera nazwy filmu: {movie_title_text}"
 
 
 def test_movie_main_elements_exist(driver):

@@ -7,31 +7,49 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="module")
 def driver():
-    """Fixtura inicjalizująca przeglądarkę i logująca użytkownika przed każdym testem."""
+    """Fixtura inicjalizująca przeglądarkę i logująca użytkownika,
+    a następnie przechodząca na stronę Watched Movies.
+    """
     chrome_options = Options()
     # chrome_options.add_argument("--headless=new")  # tryb headless
     driver = webdriver.Chrome(options=chrome_options)
-    driver.maximize_window()
     wait = WebDriverWait(driver, 10)
 
-    # Logowanie
+    # Logowanie testowego użytkownika
     driver.get("http://127.0.0.1:5000/login")
     email_input = wait.until(EC.presence_of_element_located((By.ID, "email")))
     password_input = driver.find_element(By.ID, "password")
     email_input.send_keys("rampam@gmail.com")
     password_input.send_keys("rampam123")
     password_input.send_keys(Keys.RETURN)
+
+    # Czekamy na dashboard
     wait.until(EC.title_contains("🎬 Find recommendations"))
 
-    # Przejście na stronę Watched Movies
+    # Przechodzimy na stronę watched
     driver.get("http://127.0.0.1:5000/watched")
     wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".main-content")))
 
     yield driver
     driver.quit()
 
+
+def test_page_load_time(driver):
+    """Sprawdza, czy strona /watched ładuje się w akceptowalnym czasie (max 3s)"""
+    import time
+    start_time = time.time()
+
+    driver.get("http://127.0.0.1:5000/watched")
+
+    WebDriverWait(driver, 10).until(
+        lambda d: d.execute_script("return document.readyState") == "complete"
+    )
+
+    load_time = time.time() - start_time
+    print(f"Czas ładowania strony: {load_time:.2f} sekundy")
+    assert load_time <= 3, f"Strona ładuje się zbyt długo: {load_time:.2f} s"
 
 @pytest.mark.parametrize("width,height", [
     (1920, 1080),  # Desktop (Full HD)
@@ -119,25 +137,54 @@ def test_filter_genre_dropdown(driver):
                 assert item.is_displayed()
             else:
                 assert not item.is_displayed()
-
+        # Przywracamy dropdown do "all"
+        select.select_by_value("all")
+        WebDriverWait(driver, 5).until(lambda d: all(
+            item.is_displayed() for item in d.find_elements(By.CSS_SELECTOR, "ul.movie-list li.movie-item")
+        ))
 
 def test_sort_dropdown(driver):
-    """Sprawdza obecność i działanie sortowania"""
+    """Sprawdza działanie sortowania: tytuł i rok"""
     sort_select = driver.find_element(By.ID, "sort-by")
     assert sort_select is not None
 
+    # Sprawdzenie obecności opcji
     options = [opt.get_attribute("value") for opt in sort_select.find_elements(By.TAG_NAME, "option")]
     expected_options = ["title-asc", "title-desc", "year-asc", "year-desc"]
     for opt in expected_options:
         assert opt in options
 
-    driver.execute_script(
-        "arguments[0].value='title-asc'; arguments[0].dispatchEvent(new Event('change'));",
-        sort_select
-    )
-    WebDriverWait(driver, 10).until(lambda d: d.find_elements(By.CSS_SELECTOR, ".movie-item"))
-    titles = [el.text.lower() for el in driver.find_elements(By.CSS_SELECTOR, ".movie-title")]
+    # Funkcja pomocnicza do pobrania tytułów i lat filmów
+    def get_titles_and_years():
+        items = driver.find_elements(By.CSS_SELECTOR, ".movie-item")
+        titles = [el.find_element(By.CSS_SELECTOR, ".movie-title").text.strip().lower() 
+                  for el in items if el.find_element(By.CSS_SELECTOR, ".movie-title").text.strip()]
+        years = [int(el.get_attribute("data-year") or 0) for el in items]
+        return titles, years
+
+    # --- SORTOWANIE TITLE ASC ---
+    driver.execute_script("arguments[0].value='title-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    WebDriverWait(driver, 10).until(lambda d: len([el for el in d.find_elements(By.CSS_SELECTOR, ".movie-title") if el.text.strip()]) > 1)
+    titles, _ = get_titles_and_years()
     assert titles == sorted(titles)
+
+    # --- SORTOWANIE TITLE DESC ---
+    driver.execute_script("arguments[0].value='title-desc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    WebDriverWait(driver, 10).until(lambda d: len([el for el in d.find_elements(By.CSS_SELECTOR, ".movie-title") if el.text.strip()]) > 1)
+    titles, _ = get_titles_and_years()
+    assert titles == sorted(titles, reverse=True)
+
+    # --- SORTOWANIE YEAR ASC ---
+    driver.execute_script("arguments[0].value='year-asc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    WebDriverWait(driver, 10).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".movie-item")) > 1)
+    _, years = get_titles_and_years()
+    assert years == sorted(years)
+
+    # --- SORTOWANIE YEAR DESC ---
+    driver.execute_script("arguments[0].value='year-desc'; arguments[0].dispatchEvent(new Event('change'));", sort_select)
+    WebDriverWait(driver, 10).until(lambda d: len(d.find_elements(By.CSS_SELECTOR, ".movie-item")) > 1)
+    _, years = get_titles_and_years()
+    assert years == sorted(years, reverse=True)
 
 
 def test_keyword_search_autocomplete(driver):
