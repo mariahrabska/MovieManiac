@@ -36,16 +36,14 @@
                         <input type="checkbox" class="watchlist-checkbox" 
                             data-movie-id="{{ rec.id }}"
                             {% if rec.id in watchlist_ids %}checked{% endif %}>
-                        <span class="custom-checkbox"><i class="fas fa-check"></i></span>
-                        Watchlist
+                        <span class="custom-checkbox"><i class="fas fa-plus"></i></span>
                     </label>
 
                     <label class="checkbox-container">
                         <input type="checkbox" class="watched-checkbox" 
                             data-movie-id="{{ rec.id }}"
                             {% if rec.id in watched_ids %}checked{% endif %}>
-                        <span class="custom-checkbox"><i class="fas fa-check"></i></span>
-                        Watched
+                        <span class="custom-checkbox"><i class="fas fa-eye"></i></span>
                     </label>
 
                     <label class="checkbox-container">
@@ -53,7 +51,6 @@
                             data-movie-id="{{ rec.id }}"
                             {% if rec.id in favorite_ids %}checked{% endif %}>
                         <span class="custom-checkbox"><i class="fas fa-heart"></i></span>
-                        Favorite
                     </label>
                 </div>
             </li>

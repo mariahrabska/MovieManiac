@@ -418,7 +418,7 @@ ul#recommendationsList {
 }
 
 .custom-checkbox i {
-    color: transparent;
+    color: #888;
     font-size: 1em;
     transition: color 0.2s;
 }
