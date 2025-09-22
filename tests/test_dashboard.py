@@ -35,6 +35,33 @@ def driver():
     driver.quit()  # zamknięcie przeglądarki po testach
 
 
+
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (iPad portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+
+
+def test_responsive_layout(driver, width, height):
+    """Sprawdza responsywność dashboardu w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+
+    input_box = driver.find_element(By.ID, "movie_title_input")
+    button = driver.find_element(By.CSS_SELECTOR, "button.btn.btn-primary")
+
+    assert input_box.is_displayed(), f"Input niewidoczny przy rozdzielczości {width}x{height}"
+    assert button.is_displayed(), f"Przycisk niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu: w bardzo wąskich ekranach przycisk powinien być pod inputem
+    if width < 600:  # mobile
+        assert button.location['y'] > input_box.location['y'], (
+            f"Na mobile ({width}x{height}) przycisk nie jest poniżej inputa"
+        )
+
+
 def test_page_title(driver):
     """Sprawdza, czy tytuł strony zawiera poprawny tekst"""
     assert "🎬 Find recommendations" in driver.title

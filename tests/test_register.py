@@ -47,6 +47,44 @@ def get_flashes(driver):
 
 # --- TESTY ---
 
+import pytest
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+def test_responsive_layout_register(driver, width, height):
+    """Sprawdza responsywność strony rejestracji w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+    wait = WebDriverWait(driver, 10)
+
+    # Kluczowe elementy formularza
+    username_input = wait.until(EC.presence_of_element_located((By.ID, "username")))
+    email_input = driver.find_element(By.ID, "email")
+    password_input = driver.find_element(By.ID, "password")
+    toggle_btn = driver.find_element(By.ID, "togglePassword")
+    register_btn = driver.find_element(By.CSS_SELECTOR, "button.btn-register")
+
+    # Sprawdzenie widoczności
+    assert username_input.is_displayed(), f"Pole username niewidoczne przy rozdzielczości {width}x{height}"
+    assert email_input.is_displayed(), f"Pole email niewidoczne przy rozdzielczości {width}x{height}"
+    assert password_input.is_displayed(), f"Pole hasła niewidoczne przy rozdzielczości {width}x{height}"
+    assert toggle_btn.is_displayed(), f"Przycisk pokaż/ukryj hasło niewidoczny przy rozdzielczości {width}x{height}"
+    assert register_btn.is_displayed(), f"Przycisk rejestracji niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobile
+    if width < 600:
+        assert register_btn.location['y'] > password_input.location['y'], (
+            f"Na mobile ({width}x{height}) przycisk rejestracji nie znajduje się pod polem hasła"
+        )
+
+
 def test_page_title(driver):
     """Sprawdza, czy tytuł strony rejestracji jest poprawny"""
     assert "⚡ MovieManiac: Register" in driver.title

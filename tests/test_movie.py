@@ -36,6 +36,39 @@ def driver():
     driver.quit()
 
 
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+def test_responsive_layout_movie(driver, width, height):
+    """Sprawdza responsywność strony filmu w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+    wait = WebDriverWait(driver, 10)
+
+    # Kluczowe elementy strony filmu
+    poster = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "img.poster-thumb")))
+    title = driver.find_element(By.CSS_SELECTOR, "div.movie-main-info h1")
+    rating = driver.find_element(By.CSS_SELECTOR, "div.movie-main-info p")
+    overview = driver.find_element(By.CSS_SELECTOR, "div.movie-main-info p:nth-of-type(2)")
+    additional_info_items = driver.find_elements(By.CSS_SELECTOR, "div.movie-additional-info ul li")
+
+    # Sprawdzenie widoczności
+    assert poster.is_displayed(), f"Plakat niewidoczny przy rozdzielczości {width}x{height}"
+    assert title.is_displayed(), f"Tytuł niewidoczny przy rozdzielczości {width}x{height}"
+    assert rating.is_displayed(), f"Ocena niewidoczna przy rozdzielczości {width}x{height}"
+    assert overview.is_displayed(), f"Opis filmu niewidoczny przy rozdzielczości {width}x{height}"
+    assert len(additional_info_items) > 0, f"Dodatkowe informacje niewidoczne przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobile
+    if width < 600:
+        # Sprawdzenie, że plakat jest nad tytułem i info (typowy układ mobilny)
+        poster_y = poster.location['y']
+        title_y = title.location['y']
+        assert poster_y < title_y, f"Na mobile ({width}x{height}) plakat powinien być nad tytułem"
+
 def test_page_title_contains_movie_title(driver):
     """Sprawdza, czy tytuł strony zawiera ikonę 🎬"""
     title = driver.title

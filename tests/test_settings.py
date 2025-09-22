@@ -32,6 +32,36 @@ def driver():
     driver.quit()
 
 
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+def test_responsive_layout_settings(driver, width, height):
+    """Sprawdza responsywność strony ustawień konta w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+    wait = WebDriverWait(driver, 10)
+
+    # Kluczowe elementy formularza ustawień
+    username_input = wait.until(EC.presence_of_element_located((By.ID, "username")))
+    password_input = driver.find_element(By.ID, "password")
+    save_btn = driver.find_element(By.CLASS_NAME, "btn-save")
+
+    # Sprawdzenie widoczności
+    assert username_input.is_displayed(), f"Pole username niewidoczne przy rozdzielczości {width}x{height}"
+    assert password_input.is_displayed(), f"Pole hasła niewidoczne przy rozdzielczości {width}x{height}"
+    assert save_btn.is_displayed(), f"Przycisk zapisu niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobile
+    if width < 600:
+        assert save_btn.location['y'] > password_input.location['y'], (
+            f"Na mobile ({width}x{height}) przycisk zapisu nie znajduje się pod polem hasła"
+        )
+
+
+
 def test_page_title(driver):
     """Sprawdza czy tytuł strony zawiera 'Account Settings'."""
     driver.get("http://127.0.0.1:5000/settings")

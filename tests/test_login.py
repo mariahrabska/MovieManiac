@@ -26,6 +26,38 @@ def driver():
     driver.quit()
 
 
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+
+def test_responsive_layout_login(driver, width, height):
+    """Sprawdza responsywność strony logowania w różnych rozdzielczościach"""
+    drv, wait = driver
+    drv.set_window_size(width, height)
+
+    # Poczekaj na elementy strony
+    email_input = wait.until(EC.presence_of_element_located((By.ID, "email")))
+    password_input = drv.find_element(By.ID, "password")
+    toggle_btn = drv.find_element(By.ID, "togglePassword")
+    login_btn = drv.find_element(By.CSS_SELECTOR, "button.btn-primary")
+
+    # Wszystkie elementy muszą być widoczne
+    assert email_input.is_displayed(), f"Pole email niewidoczne przy rozdzielczości {width}x{height}"
+    assert password_input.is_displayed(), f"Pole hasła niewidoczne przy rozdzielczości {width}x{height}"
+    assert toggle_btn.is_displayed(), f"Przycisk pokaż/ukryj hasło niewidoczny przy rozdzielczości {width}x{height}"
+    assert login_btn.is_displayed(), f"Przycisk logowania niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobilnych szerokości
+    if width < 600:  # typowe mobile
+        assert login_btn.location['y'] > password_input.location['y'], (
+            f"Na mobile ({width}x{height}) przycisk logowania nie jest poniżej pola hasła"
+        )
+
+
 def test_page_title(driver):
     """Sprawdza, czy tytuł strony logowania zawiera właściwy tekst"""
     drv, _ = driver

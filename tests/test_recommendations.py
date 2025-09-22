@@ -38,6 +38,48 @@ def driver():
     driver.quit()
 
 
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+def test_responsive_layout_recommendations(driver, width, height):
+    """Sprawdza responsywność strony rekomendacji w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+    wait = WebDriverWait(driver, 10)
+
+    # Kluczowe elementy strony rekomendacji
+    main_content = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".main-content")))
+    rec_list_items = driver.find_elements(By.CSS_SELECTOR, "#recommendationsList .movie-item-content")
+    pagination_prev = driver.find_elements(By.ID, "prevPageBtn")
+    pagination_next = driver.find_elements(By.ID, "nextPageBtn")
+
+    # Sprawdzenie widoczności main content
+    assert main_content.is_displayed(), f"Main content niewidoczny przy rozdzielczości {width}x{height}"
+
+    if rec_list_items:
+        first_movie = rec_list_items[0]
+        assert first_movie.is_displayed(), f"Pierwszy film niewidoczny przy rozdzielczości {width}x{height}"
+
+        # Sprawdzenie widoczności ikon w checkboxach
+        for cb_class in ["watchlist-checkbox", "watched-checkbox", "favorite-checkbox"]:
+            icon = first_movie.find_element(By.CSS_SELECTOR, f".{cb_class} + .custom-checkbox i")
+            assert icon.is_displayed(), f"Ikona checkboxa {cb_class} niewidoczna przy rozdzielczości {width}x{height}"
+
+    if pagination_prev:
+        assert pagination_prev[0].is_displayed(), f"Przycisk Previous niewidoczny przy rozdzielczości {width}x{height}"
+    if pagination_next:
+        assert pagination_next[0].is_displayed(), f"Przycisk Next niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobile
+    if width < 600 and rec_list_items:
+        movie_y = rec_list_items[0].location['y']
+        assert movie_y > main_content.location['y'], f"Na mobile ({width}x{height}) lista rekomendacji powinna być pod main content"
+
+
+
 def test_recommendations_list_exists(driver):
     """Sprawdza, czy lista rekomendacji istnieje i zawiera co najmniej jeden film"""
     rec_list = driver.find_element(By.ID, "recommendationsList")

@@ -34,6 +34,43 @@ def driver():
     driver.quit()
 
 
+
+@pytest.mark.parametrize("width,height", [
+    (1920, 1080),  # Desktop (Full HD)
+    (1366, 768),   # Laptop
+    (768, 1024),   # Tablet (portrait)
+    (414, 896),    # iPhone XR / 11
+    (375, 812),    # iPhone X / 12 mini
+])
+def test_responsive_layout_ranking(driver, width, height):
+    """Sprawdza responsywność strony rankingowej w różnych rozdzielczościach"""
+    driver.set_window_size(width, height)
+    wait = WebDriverWait(driver, 10)
+
+    # Kluczowe elementy strony
+    main_content = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".main-content")))
+    ranking_items = driver.find_elements(By.CSS_SELECTOR, "ul.ranking-list li.ranking-item")
+
+    # Sprawdzenie widoczności
+    assert main_content.is_displayed(), f"Main content niewidoczny przy rozdzielczości {width}x{height}"
+    if ranking_items:
+        for item in ranking_items[:3]:  # sprawdzamy pierwsze 3 elementy
+            assert item.is_displayed(), f"Element rankingowy niewidoczny przy rozdzielczości {width}x{height}"
+            info = item.find_element(By.CSS_SELECTOR, ".movie-info")
+            title = info.find_element(By.CSS_SELECTOR, ".movie-title")
+            vote = info.find_element(By.CSS_SELECTOR, ".vote-average")
+            genres = info.find_element(By.CSS_SELECTOR, ".movie-genres")
+            desc = info.find_element(By.CSS_SELECTOR, ".movie-description")
+            assert title.is_displayed(), f"Tytuł niewidoczny przy rozdzielczości {width}x{height}"
+            assert vote.is_displayed(), f"Ocena niewidoczna przy rozdzielczości {width}x{height}"
+            assert genres.is_displayed(), f"Gatunki niewidoczne przy rozdzielczości {width}x{height}"
+            assert desc.is_displayed(), f"Opis filmu niewidoczny przy rozdzielczości {width}x{height}"
+
+    # Dodatkowa walidacja układu dla mobile
+    if width < 600 and ranking_items:
+        first_item_y = ranking_items[0].location['y']
+        assert first_item_y > main_content.location['y'], f"Na mobile ({width}x{height}) ranking powinien być pod main content"
+
 def test_page_title(driver):
     """Sprawdza tytuł strony rankingowej"""
     assert driver.title == "🎬Movie Ranking"
